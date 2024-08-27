@@ -21,17 +21,14 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract branch name
-        shell: bash
-        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
-        id: extract_branch
-
       - name: Install dependencies
         run: npm ci
 
       - name: Build Library
         run: npm run build
-      - run: echo "npm-pack=$(npm pack)" >> $GITHUB_OUTPUT
+
+      - name: Create Zip file 
+        run: echo "npm-pack=$(npm pack)" >> $GITHUB_OUTPUT
         id: npm-pack
 
       # - uses: actions/upload-artifact@v4
@@ -39,13 +36,13 @@ jobs:
       #     name: ${{ steps.npm-pack.outputs.npm-pack }}
       #     path: ${{ steps.npm-pack.outputs.npm-pack }}
 
-      - name: Upload Gzip to release
+      - name: Upload Zip to release
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ steps.npm-pack.outputs.npm-pack }}
           asset_name: rx-player.tgz
-          tag: '4.2.0.${{ steps.extract_branch.outputs.GITHUB_HEAD_REF }}.${{ github.sha }}'
+          tag: '4.2.0.preview.${{ github.sha }}'
           overwrite: true
           body: "This is my release text"
 
