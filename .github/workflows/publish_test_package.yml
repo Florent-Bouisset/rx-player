@@ -38,6 +38,7 @@ jobs:
 
       - name: Upload Zip to release
         uses: svenstaro/upload-release-action@v2
+        id: upload-action
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ steps.npm-pack.outputs.npm-pack }}
@@ -46,4 +47,9 @@ jobs:
           overwrite: true
           body: "This is my release text"
 
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            A gzipped version of the branch has been deployed to ${{steps.upload-action.outputs.browser_download_url}}  :wave:
       
