@@ -41,7 +41,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ steps.npm-pack.outputs.npm-pack }}
           asset_name: rx-player.tgz
-          tag: '4.2.0.${{ github.sha }}'
+          tag: '4.2.0.${{ github.ref_name }}.${{ github.sha }}'
           overwrite: true
           body: "This is my release text"
 
