@@ -21,6 +21,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Extract branch name
+        shell: bash
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+        id: extract_branch
 
       - name: Install dependencies
         run: npm ci
@@ -41,7 +45,7 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: ${{ steps.npm-pack.outputs.npm-pack }}
           asset_name: rx-player.tgz
-          tag: '4.2.0.${{ github.ref_name }}.${{ github.sha }}'
+          tag: '4.2.0.${{ steps.extract_branch.outputs.GITHUB_HEAD_REF }}.${{ github.sha }}'
           overwrite: true
           body: "This is my release text"
 
