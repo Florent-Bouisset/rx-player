@@ -7,7 +7,7 @@ jobs:
   publish-test-package:
     # This action only runs on forks because it pushes a new release.
     # It is unwanted on the main repository as it would spam the releases.
-    if: ${{ github.repository != 'canalplus/rx-player' }}
+    if: ${{ github.repository != 'Florent-Bouisset/rx-player' }}
     runs-on: [ubuntu-latest]
     permissions:
         packages: write
@@ -60,7 +60,7 @@ jobs:
 
             You can import it by changing you package.json:  
             `"rx-player": "${{steps.upload-action.outputs.browser_download_url}}"`
-            
+
             Then run: 
             `npm install`
 
