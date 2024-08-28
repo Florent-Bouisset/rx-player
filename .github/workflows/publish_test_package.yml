@@ -55,8 +55,13 @@ jobs:
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
-            A gzipped version of the branch has been deployed to ${{steps.upload-action.outputs.browser_download_url}}  :wave:\n
-            You can import it by changing you package.json:  `"rx-player": "${{steps.upload-action.outputs.browser_download_url}}"`\n
-            Then run `npm install`
+            A gzipped version of the branch has been deployed to the following URL
+            ${{steps.upload-action.outputs.browser_download_url}}
+
+            You can import it by changing you package.json:  
+            `"rx-player": "${{steps.upload-action.outputs.browser_download_url}}"`
+            
+            Then run: 
+            `npm install`
 
       
