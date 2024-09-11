@@ -9,9 +9,9 @@ describe("DASH parsers - ManifestBoundsCalculator", () => {
       availabilityStartTime: 0,
       serverTimestampOffset: undefined,
     });
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(undefined);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(3)).toEqual(undefined);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(5)).toEqual(undefined);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(undefined);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(undefined);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(undefined);
   });
 
   it("should return 0 through `getEstimatedMinimumSegmentTime` for a static content", () => {
@@ -21,10 +21,10 @@ describe("DASH parsers - ManifestBoundsCalculator", () => {
       availabilityStartTime: 0,
       serverTimestampOffset: 555555,
     });
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(0);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(0);
     manifestBoundsCalculator.setLastPosition(5555, 2135);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(4)).toEqual(0);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(5)).toEqual(0);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(0);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(0);
   });
 
   it("should return 0 through `getEstimatedMinimumSegmentTime` if the `serverTimestampOffset` was never set nor the last position for a dynamic content with no timeShiftBufferDepth", () => {
@@ -34,9 +34,9 @@ describe("DASH parsers - ManifestBoundsCalculator", () => {
       availabilityStartTime: 0,
       serverTimestampOffset: undefined,
     });
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(0);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(5)).toEqual(0);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(28)).toEqual(0);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(0);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(0);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(0);
   });
 
   it("should return `false` through `lastPositionIsKnown` if `setLastPositionOffset` was never called", () => {
@@ -47,7 +47,7 @@ describe("DASH parsers - ManifestBoundsCalculator", () => {
       serverTimestampOffset: undefined,
     });
     expect(manifestBoundsCalculator.lastPositionIsKnown()).toEqual(false);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(undefined);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(undefined);
     expect(manifestBoundsCalculator.lastPositionIsKnown()).toEqual(false);
   });
 
@@ -86,10 +86,9 @@ describe("DASH parsers - ManifestBoundsCalculator", () => {
     });
     manifestBoundsCalculator.setLastPosition(1000, 10);
     performanceNow = 25000;
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(1010);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(50)).toEqual(960);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(1010);
     performanceNow = 35000;
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(1020);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(1020);
     mockPerformanceNow.mockRestore();
   });
 
@@ -105,26 +104,17 @@ describe("DASH parsers - ManifestBoundsCalculator", () => {
       serverTimestampOffset: 7000,
     });
     manifestBoundsCalculator.setLastPosition(3000, 10);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(
       7 + 5 - 4 - 3,
     );
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(4)).toEqual(
-      7 + 5 - 4 - 3 - 4,
-    );
     performanceNow = 25000;
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(
       7 + 25 - 4 - 3,
-    );
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(10)).toEqual(
-      7 + 25 - 4 - 3 - 10,
     );
     performanceNow = 35000;
     manifestBoundsCalculator.setLastPosition(84546464, 5642);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(
       7 + 35 - 4 - 3,
-    );
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(5)).toEqual(
-      7 + 35 - 4 - 3 - 5,
     );
     mockPerformanceNow.mockRestore();
   });
@@ -142,12 +132,10 @@ describe("DASH parsers - ManifestBoundsCalculator", () => {
     });
     manifestBoundsCalculator.setLastPosition(1000, 0);
     performanceNow = 50000;
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(1045);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(40)).toEqual(1005);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(1045);
     manifestBoundsCalculator.setLastPosition(0, 0);
     performanceNow = 55000;
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(0)).toEqual(50);
-    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime(40)).toEqual(10);
+    expect(manifestBoundsCalculator.getEstimatedMinimumSegmentTime()).toEqual(50);
     mockPerformanceNow.mockRestore();
   });
 

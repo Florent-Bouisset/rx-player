@@ -109,14 +109,10 @@ export default class ManifestBoundsCalculator {
   /**
    * Estimate a minimum bound for the content from the last set segment time
    * and buffer depth.
-   * Consider that it is only an estimate, not the real value.
-   * @param {number} segmentDuration - In DASH, the buffer depth actually also
-   * depend on a corresponding's segment duration (e.g. a segment become
-   * unavailable once the `timeShiftBufferDepth` + its duration has elapsed).
-   * This argument can thus be set the approximate duration of a segment.
+   * Consider that it is only an estimation, not the real value.
    * @return {number|undefined}
    */
-  getEstimatedMinimumSegmentTime(segmentDuration: number): number | undefined {
+  getEstimatedMinimumSegmentTime(): number | undefined {
     if (!this._isDynamic || this._timeShiftBufferDepth === null) {
       return 0;
     }
@@ -125,7 +121,7 @@ export default class ManifestBoundsCalculator {
     if (maximumBound === undefined) {
       return undefined;
     }
-    const minimumBound = maximumBound - (this._timeShiftBufferDepth + segmentDuration);
+    const minimumBound = maximumBound - this._timeShiftBufferDepth;
     return minimumBound;
   }
 
