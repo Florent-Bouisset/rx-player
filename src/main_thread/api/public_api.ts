@@ -504,6 +504,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
 
       this._priv_worker.onerror = (evt: ErrorEvent) => {
         if (this._priv_worker !== null) {
+          // eslint-disable-next-line no-console
+          console.log("DEBUG FLORENT: onError worker, removing it");
           this._priv_worker.terminate();
           this._priv_worker = null;
         }
@@ -674,6 +676,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     this.videoElement = null;
 
     if (this._priv_worker !== null) {
+      // eslint-disable-next-line no-console
+      console.log("DEBUG FLORENT: from dispose(), removing priv_worker");
       this._priv_worker.terminate();
       this._priv_worker = null;
     }
@@ -977,6 +981,12 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           __priv_manifestUpdateUrl,
           __priv_patchLastSegmentInSidx,
         };
+        // eslint-disable-next-line no-console
+        console.log(
+          "DEBUG FLORENT: ",
+          this._priv_worker === null ? "null" : "defined",
+          this._priv_worker,
+        );
         initializer = new features.multithread.init({
           adaptiveOptions,
           autoPlay,
