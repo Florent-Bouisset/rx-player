@@ -1102,9 +1102,23 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
           assertUnreachable(msgData);
       }
     };
-
+    const eventListenerId = idGenerator()();
+    // eslint-disable-next-line no-console
+    console.log(
+      "DEBUG FLORENT, adding onmessage event listener with id",
+      eventListenerId,
+    );
     this._settings.worker.addEventListener("message", onmessage);
+    this._settings.worker.onmessageerror = (event) => {
+      // eslint-disable-next-line no-console
+      console.log("DEBUG FLORENT; onmessageError from worker", event);
+    };
     this._initCanceller.signal.register(() => {
+      // eslint-disable-next-line no-console
+      console.log(
+        "DEBUG FLORENT, removing onmessage event listener with id",
+        eventListenerId,
+      );
       this._settings.worker.removeEventListener("message", onmessage);
     });
   }

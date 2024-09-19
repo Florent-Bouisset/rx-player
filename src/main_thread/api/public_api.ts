@@ -523,6 +523,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
         if (msgData.type === WorkerMessageType.InitError) {
           log.warn("API: Processing InitError worker message: detaching worker");
           if (this._priv_worker !== null) {
+            // eslint-disable-next-line no-console
+            console.log("DEBUG FLORENT: removing message for handleInitMessage");
             this._priv_worker.removeEventListener("message", handleInitMessages);
             this._priv_worker.terminate();
             this._priv_worker = null;
@@ -541,6 +543,9 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           res();
         }
       };
+
+      // eslint-disable-next-line no-console
+      console.log("DEBUG FLORENT: adding message for handleInitMessage");
       this._priv_worker.addEventListener("message", handleInitMessages);
 
       log.debug("---> Sending To Worker:", MainThreadMessageType.Init);
