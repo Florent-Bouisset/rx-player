@@ -101,7 +101,7 @@ export default class Logger extends EventEmitter<ILoggerEvents> {
     if (actualFormat === "full" && actualFormat !== this._currentFormat) {
       // Add the current Date so we can see at which time logs are displayed
       const now = getMonotonicTimeStamp();
-      /* eslint-disable-next-line no-console */
+      // eslint-disable-next-line no-console
       console.log(String(now.toFixed(2)), "[Init]", `Local-Date: ${Date.now()}`);
     }
     this._currentFormat = actualFormat;
@@ -138,18 +138,17 @@ export default class Logger extends EventEmitter<ILoggerEvents> {
       /* eslint-enable no-console */
       /* eslint-enable no-invalid-this */
     } else {
-      const produceLogFn = (logLevel: ILoggerLevel, namespace: string) => {
+      const produceLogFn = (logLevel: ILoggerLevel) => {
         return level >= this._levels[logLevel]
           ? (...args: IAcceptedLogValue[]) => {
-              const now = getMonotonicTimeStamp();
-              return logFn(logLevel, [now, namespace, ...args]);
+              return logFn(logLevel, args);
             }
           : noop;
       };
-      this.error = produceLogFn("ERROR", "error");
-      this.warn = produceLogFn("WARNING", "warn");
-      this.info = produceLogFn("INFO", "info");
-      this.debug = produceLogFn("DEBUG", "log");
+      this.error = produceLogFn("ERROR");
+      this.warn = produceLogFn("WARNING");
+      this.info = produceLogFn("INFO");
+      this.debug = produceLogFn("DEBUG");
     }
 
     this.trigger("onLogLevelChange", {

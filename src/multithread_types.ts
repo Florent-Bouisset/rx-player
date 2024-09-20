@@ -8,12 +8,13 @@ import type { ISegmentSinkMetrics } from "./core/segment_sinks/segment_buffers_s
 import type {
   IResolutionInfo,
   IManifestFetcherSettings,
-  ISegmentFetcherCreatorBackoffOptions,
+  ISegmentQueueCreatorBackoffOptions,
   IInbandEvent,
   IPausedPlaybackObservation,
   IRepresentationsChoice,
   ITrackSwitchingMode,
 } from "./core/types";
+import type { IDefaultConfig } from "./default_config";
 import type {
   ISerializedMediaError,
   ISerializedNetworkError,
@@ -140,7 +141,7 @@ export interface IContentInitializationData {
    */
   manifestRetryOptions: Omit<IManifestFetcherSettings, "cmcdDataBuilder">;
   /** Options relative to the fetching of media segments. */
-  segmentRetryOptions: ISegmentFetcherCreatorBackoffOptions;
+  segmentRetryOptions: ISegmentQueueCreatorBackoffOptions;
 }
 
 export interface ILogLevelUpdateMessage {
@@ -156,6 +157,12 @@ export interface ILogLevelUpdateMessage {
      */
     sendBackLogs: boolean;
   };
+}
+
+/** Message sent by the main thread to update the Worker's global config. */
+export interface IConfigUpdateMessage {
+  type: MainThreadMessageType.ConfigUpdate;
+  value: Partial<IDefaultConfig>;
 }
 
 /**
@@ -542,6 +549,7 @@ export const enum MainThreadMessageType {
   RemoveTextDataError = "remove-text-error",
   CodecSupportUpdate = "codec-support-update",
   ContentUrlsUpdate = "urls-update",
+  ConfigUpdate = "config-update",
   DecipherabilityStatusUpdate = "decipherability-update",
   LogLevelUpdate = "log-level-update",
   MediaSourceReadyStateChange = "media-source-ready-state-change",
@@ -560,6 +568,7 @@ export const enum MainThreadMessageType {
 export type IMainThreadMessage =
   | IInitMessage
   | ILogLevelUpdateMessage
+  | IConfigUpdateMessage
   | IPrepareContentMessage
   | IStopContentMessage
   | IStartPreparedContentMessage

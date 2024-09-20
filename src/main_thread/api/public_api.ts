@@ -32,6 +32,7 @@ import getStartDate from "../../compat/get_start_date";
 import hasMseInWorker from "../../compat/has_mse_in_worker";
 import hasWorkerApi from "../../compat/has_worker_api";
 import isDebugModeEnabled from "../../compat/is_debug_mode_enabled";
+import config from "../../config";
 import type { ISegmentSinkMetrics } from "../../core/segment_sinks/segment_buffers_store";
 import type {
   IAdaptationChoice,
@@ -39,6 +40,7 @@ import type {
   IABRThrottlers,
   IBufferType,
 } from "../../core/types";
+import type { IDefaultConfig } from "../../default_config";
 import type { IErrorCode, IErrorType } from "../../errors";
 import { ErrorCodes, ErrorTypes, formatError, MediaError } from "../../errors";
 import WorkerInitializationError from "../../errors/worker_initialization_error";
@@ -502,6 +504,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
 
       this._priv_worker.onerror = (evt: ErrorEvent) => {
         if (this._priv_worker !== null) {
+          // eslint-disable-next-line no-console
+          console.log("DEBUG FLORENT: onError worker, removing it");
           this._priv_worker.terminate();
           this._priv_worker = null;
         }
@@ -521,6 +525,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
         if (msgData.type === WorkerMessageType.InitError) {
           log.warn("API: Processing InitError worker message: detaching worker");
           if (this._priv_worker !== null) {
+            // eslint-disable-next-line no-console
+            console.log("DEBUG FLORENT: removing message for handleInitMessage");
             this._priv_worker.removeEventListener("message", handleInitMessages);
             this._priv_worker.terminate();
             this._priv_worker = null;
@@ -539,6 +545,9 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           res();
         }
       };
+
+      // eslint-disable-next-line no-console
+      console.log("DEBUG FLORENT: adding message for handleInitMessage");
       this._priv_worker.addEventListener("message", handleInitMessages);
 
       log.debug("---> Sending To Worker:", MainThreadMessageType.Init);
@@ -573,6 +582,21 @@ class Player extends EventEmitter<IPublicAPIEvent> {
         },
         this._destroyCanceller.signal,
       );
+
+      const sendConfigUpdates = (updates: Partial<IDefaultConfig>) => {
+        if (this._priv_worker === null) {
+          return;
+        }
+        log.debug("---> Sending To Worker:", MainThreadMessageType.ConfigUpdate);
+        this._priv_worker.postMessage({
+          type: MainThreadMessageType.ConfigUpdate,
+          value: updates,
+        });
+      };
+      if (config.updated) {
+        sendConfigUpdates(config.getCurrent());
+      }
+      config.addEventListener("update", sendConfigUpdates, this._destroyCanceller.signal);
     });
   }
 
@@ -652,6 +676,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     this.videoElement = null;
 
     if (this._priv_worker !== null) {
+      // eslint-disable-next-line no-console
+      console.log("DEBUG FLORENT: from dispose(), removing priv_worker");
       this._priv_worker.terminate();
       this._priv_worker = null;
     }
@@ -955,6 +981,12 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           __priv_manifestUpdateUrl,
           __priv_patchLastSegmentInSidx,
         };
+        // eslint-disable-next-line no-console
+        console.log(
+          "DEBUG FLORENT: ",
+          this._priv_worker === null ? "null" : "defined",
+          this._priv_worker,
+        );
         initializer = new features.multithread.init({
           adaptiveOptions,
           autoPlay,
@@ -1131,11 +1163,12 @@ class Player extends EventEmitter<IPublicAPIEvent> {
             .getValue()
             .position.getPolled();
           break;
-        default:
+        default: {
           const o = playbackObserver.getReference().getValue();
           this._priv_reloadingMetadata.reloadInPause = o.paused;
           this._priv_reloadingMetadata.reloadPosition = o.position.getWanted();
           break;
+        }
       }
     };
 
@@ -1277,11 +1310,11 @@ class Player extends EventEmitter<IPublicAPIEvent> {
    * @returns {HTMLMediaElement|null} - The HTMLMediaElement used (`null` when
    * disposed)
    */
-  /* eslint-disable @typescript-eslint/no-restricted-types */
+  // eslint-disable-next-line @typescript-eslint/no-restricted-types
   getVideoElement(): HTMLMediaElement | null {
+    // eslint-disable-next-line @typescript-eslint/no-restricted-types
     return this.videoElement as HTMLMediaElement;
   }
-  /* eslint-enable @typescript-eslint/no-restricted-types */
 
   /**
    * Returns the player's current state.
@@ -1616,9 +1649,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     }
 
     const playPromise = this.videoElement.play();
-    /* eslint-disable @typescript-eslint/unbound-method */
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     if (isNullOrUndefined(playPromise) || typeof playPromise.catch !== "function") {
-      /* eslint-enable @typescript-eslint/unbound-method */
       return Promise.resolve();
     }
     return playPromise.catch((error: Error) => {
@@ -2097,7 +2129,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
         const audioId = typeof arg === "string" ? arg : arg.trackId;
         mediaElementTracksStore?.setAudioTrackById(audioId);
         return;
-      } catch (e) {
+      } catch (_e) {
         throw new Error("player: unknown audio track");
       }
     }
@@ -2143,7 +2175,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
         const textId = typeof arg === "string" ? arg : arg.trackId;
         mediaElementTracksStore?.setTextTrackById(textId);
         return;
-      } catch (e) {
+      } catch (_e) {
         throw new Error("player: unknown text track");
       }
     }
@@ -2195,7 +2227,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
         const videoId = typeof arg === "string" ? arg : arg.trackId;
         mediaElementTracksStore?.setVideoTrackById(videoId);
         return;
-      } catch (e) {
+      } catch (_e) {
         throw new Error("player: unknown video track");
       }
     }
@@ -2925,7 +2957,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
         return;
       }
       switch (type) {
-        case "audio":
+        case "audio": {
           const audioTrack = tracksStore.getChosenAudioTrack(periodRef, true);
           this._priv_triggerEventIfNotStopped(
             "audioTrackChange",
@@ -2933,11 +2965,13 @@ class Player extends EventEmitter<IPublicAPIEvent> {
             cancelSignal,
           );
           break;
-        case "text":
+        }
+        case "text": {
           const textTrack = tracksStore.getChosenTextTrack(periodRef);
           this._priv_triggerEventIfNotStopped("textTrackChange", textTrack, cancelSignal);
           break;
-        case "video":
+        }
+        case "video": {
           const videoTrack = tracksStore.getChosenVideoTrack(periodRef, true);
           this._priv_triggerEventIfNotStopped(
             "videoTrackChange",
@@ -2945,6 +2979,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
             cancelSignal,
           );
           break;
+        }
       }
     }
   }
@@ -3028,9 +3063,9 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     }
     this.trigger(
       // !!! undocumented API :O !!!
-      /* eslint-disable-next-line */
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       "__priv_bitrateEstimateChange" as any,
-      /* eslint-disable-next-line */
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       { type, bitrate } as any,
     );
   }
@@ -3249,7 +3284,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
       return;
     }
     switch (trackType) {
-      case "video":
+      case "video": {
         const videoTracks = tracksStore.getAvailableVideoTracks(periodRef, true);
         this._priv_triggerEventIfNotStopped(
           "availableVideoTracksChange",
@@ -3257,7 +3292,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           cancelSignal,
         );
         break;
-      case "audio":
+      }
+      case "audio": {
         const audioTracks = tracksStore.getAvailableAudioTracks(periodRef, true);
         this._priv_triggerEventIfNotStopped(
           "availableAudioTracksChange",
@@ -3265,7 +3301,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           cancelSignal,
         );
         break;
-      case "text":
+      }
+      case "text": {
         const textTracks = tracksStore.getAvailableTextTracks(periodRef);
         this._priv_triggerEventIfNotStopped(
           "availableTextTracksChange",
@@ -3273,6 +3310,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           cancelSignal,
         );
         break;
+      }
       default:
         assertUnreachable(trackType);
     }

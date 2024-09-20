@@ -23,8 +23,8 @@ import isNonEmptyString from "../../../utils/is_non_empty_string";
 import isNullOrUndefined from "../../../utils/is_null_or_undefined";
 import getMonotonicTimeStamp from "../../../utils/monotonic_timestamp";
 import objectAssign from "../../../utils/object_assign";
-import { getFilenameIndexInUrl } from "../../../utils/resolve_url";
 import { hexToBytes } from "../../../utils/string_parsing";
+import { getFilenameIndexInUrl } from "../../../utils/url-utils";
 import { createBox } from "../../containers/isobmff";
 import type {
   IParsedAdaptation,
@@ -312,7 +312,7 @@ function createSmoothStreamingParser(
       root,
       (res, _name, node) => {
         switch (_name) {
-          case "QualityLevel":
+          case "QualityLevel": {
             const qualityLevel = parseQualityLevel(node, adaptationType);
             if (qualityLevel === null) {
               return res;
@@ -326,6 +326,7 @@ function createSmoothStreamingParser(
               res.qualityLevels.push(qualityLevel);
             }
             break;
+          }
           case "c":
             res.cNodes.push(node);
             break;
