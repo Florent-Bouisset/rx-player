@@ -70,6 +70,7 @@ import listenToMediaError from "./utils/throw_on_media_error";
 import { updateManifestCodecSupport } from "./utils/update_manifest_codec_support";
 
 const generateContentId = idGenerator();
+const generateEventListenerId = idGenerator();
 
 /**
  * @class MultiThreadContentInitializer
@@ -1102,7 +1103,7 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
           assertUnreachable(msgData);
       }
     };
-    const eventListenerId = idGenerator()();
+    const eventListenerId = generateEventListenerId();
     // eslint-disable-next-line no-console
     console.log(
       "DEBUG FLORENT, adding onmessage event listener with id",
