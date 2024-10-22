@@ -82,6 +82,7 @@ export interface ICorePlaybackObservation {
   rebuffering: IRebufferingStatus | null;
   freezing: IFreezingStatus | null;
   bufferGap: number | undefined;
+  canStream: boolean | undefined;
 }
 
 /**
@@ -149,6 +150,7 @@ export default function createCorePlaybackObserver(
         },
         readyState: observation.readyState,
         speed: lastSpeed,
+        canStream: mediaSource?.streaming,
       };
     }
 

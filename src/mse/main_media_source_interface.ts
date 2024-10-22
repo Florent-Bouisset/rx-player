@@ -44,6 +44,8 @@ export default class MainMediaSourceInterface
   public sourceBuffers: MainSourceBufferInterface[];
   /** @see IMediaSourceInterface */
   public readyState: ReadyState;
+
+  public streaming?: boolean;
   /** The MSE `MediaSource` instance linked to that `IMediaSourceInterface`. */
   private _mediaSource: IMediaSource;
   /**
@@ -117,6 +119,15 @@ export default class MainMediaSourceInterface
       },
       this._canceller.signal,
     );
+    if (this._mediaSource.streaming !== undefined) {
+      this.streaming = this._mediaSource.streaming;
+    }
+    this._mediaSource.addEventListener("startstreaming", () => {
+      this.streaming = true;
+    });
+    this._mediaSource.addEventListener("endstreaming", () => {
+      this.streaming = false;
+    });
   }
 
   /** @see IMediaSourceInterface */

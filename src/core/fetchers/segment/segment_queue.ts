@@ -116,6 +116,7 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
   public resetForContent(
     content: ISegmentQueueContext,
     hasInitSegment: boolean,
+    canStream: SharedReference<boolean | undefined>,
   ): SharedReference<ISegmentQueueItem> {
     this._currentContentInfo?.currentCanceller.cancel();
     const downloadQueue = new SharedReference<ISegmentQueueItem>({
@@ -136,6 +137,7 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
       initSegmentRequest: null,
       mediaSegmentRequest: null,
       mediaSegmentAwaitingInitMetadata: null,
+      canStream,
     };
     this._currentContentInfo = currentContentInfo;
 
@@ -257,6 +259,12 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
     const { downloadQueue, content, initSegmentInfoRef, currentCanceller } = contentInfo;
 
     const recursivelyRequestSegments = (): void => {
+      if (contentInfo.canStream.getValue() === false) {
+        log.info(
+          "DEBUG MediaSource: segment fetching postponed because it cannot stream now",
+        );
+        return;
+      }
       const { segmentQueue } = downloadQueue.getValue();
       const startingSegment = segmentQueue[0];
       if (currentCanceller !== null && currentCanceller.isUsed()) {
@@ -681,4 +689,6 @@ interface ISegmentQueueContentInfo {
    * `null` if no segment is awaiting an init segment.
    */
   mediaSegmentAwaitingInitMetadata: string | null;
+
+  canStream: SharedReference<boolean | undefined>;
 }

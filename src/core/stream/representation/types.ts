@@ -192,6 +192,8 @@ export interface IRepresentationStreamPlaybackObservation {
   paused: IPausedPlaybackObservation;
   /** Last "playback rate" asked by the user. */
   speed: number;
+
+  canStream: boolean | undefined;
 }
 
 /** Pause-related information linked to an emitted Playback observation. */

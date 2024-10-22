@@ -115,6 +115,8 @@ export interface IMediaSourceEventMap {
   sourceopen: Event;
   sourceended: Event;
   sourceclose: Event;
+  startstreaming: Event;
+  endstreaming: Event;
 }
 
 /**
@@ -135,6 +137,7 @@ export interface IMediaSource extends IEventTarget<IMediaSourceEventMap> {
   handle?: MediaProvider | IMediaSource | undefined;
   readyState: "closed" | "open" | "ended";
   sourceBuffers: ISourceBufferList;
+  streaming?: boolean | undefined;
 
   addSourceBuffer(type: string): ISourceBuffer;
   clearLiveSeekableRange(): void;
@@ -407,11 +410,12 @@ const gs = globalScope as any;
 const MediaSource_:
   | { new (): IMediaSource; isTypeSupported(type: string): boolean }
   | undefined =
+  // TO DO: define if ManagedMediaSource should be used in priority?
+  gs?.ManagedMediaSource ??
   gs?.MediaSource ??
   gs?.MozMediaSource ??
   gs?.WebKitMediaSource ??
   gs?.MSMediaSource ??
-  gs?.ManagedMediaSource ??
   undefined;
 
 const isManagedMediaSource =

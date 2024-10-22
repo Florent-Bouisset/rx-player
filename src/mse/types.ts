@@ -213,6 +213,9 @@ export interface IMediaSourceInterface extends EventEmitter<IMediaSourceInterfac
    * Note that only one `ISourceBufferInterface` for a given `SourceBufferType`
    * can be created at most per-`IMediaSourceInterface`.
    */
+  /** MSE Managed MediaSource */
+  streaming?: boolean;
+
   addSourceBuffer(sbType: SourceBufferType, codec: string): ISourceBufferInterface;
   /**
    * Update `duration` property (which in reality means more the "maximum

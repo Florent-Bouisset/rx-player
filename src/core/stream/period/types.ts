@@ -96,6 +96,8 @@ export interface IPeriodStreamPlaybackObservation {
    * `null` if no buffer exists for that type of media.
    */
   buffered: Record<ITrackType, IRange[] | null>;
+
+  canStream: boolean | undefined;
 }
 
 /** Arguments required by the `PeriodStream`. */

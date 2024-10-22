@@ -122,6 +122,8 @@ export interface IAdaptationStreamPlaybackObservation
   duration: number;
   /** Theoretical maximum position on the content that can currently be played. */
   maximumPosition: number;
+
+  canStream: boolean | undefined;
 }
 
 /** Arguments given when creating a new `AdaptationStream`. */
