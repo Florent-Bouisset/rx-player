@@ -1,4 +1,4 @@
-import { isA1KStb40xx, isPanasonic, isPhilipsNetTv, isWebOs } from "./browser_detection";
+// import { isA1KStb40xx, isPanasonic, isPhilipsNetTv, isWebOs } from "./browser_detection";
 
 /**
  * Returns `true` if a `MediaKeys` instance (the  `Encrypted Media Extension`
@@ -19,5 +19,11 @@ import { isA1KStb40xx, isPanasonic, isPhilipsNetTv, isWebOs } from "./browser_de
  * @returns {boolean}
  */
 export default function canReuseMediaKeys(): boolean {
-  return !isWebOs && !isPhilipsNetTv && !isPanasonic && !isA1KStb40xx;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, no-restricted-properties, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+  if ((window as any)._RENEW_MEDIA_KEYS === undefined) {
+    return false;
+  } else {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, no-restricted-properties, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+    return !Boolean((window as any)._RENEW_MEDIA_KEYS);
+  }
 }
