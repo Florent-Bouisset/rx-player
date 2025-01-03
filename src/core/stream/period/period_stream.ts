@@ -127,7 +127,7 @@ export default function PeriodStream(
 
         const streamCanceller = new TaskCanceller();
         streamCanceller.linkToSignal(parentCancelSignal);
-        currentStreamCanceller?.cancel(); // Cancel oreviously created stream if one
+        currentStreamCanceller?.cancel(); // Cancel previously created stream if one
         currentStreamCanceller = streamCanceller;
 
         if (choice === null) {
@@ -457,11 +457,9 @@ function createOrReuseSegmentSink(
   const segmentSinkStatus = segmentSinksStore.getStatus(bufferType);
   if (segmentSinkStatus.type === "initialized") {
     log.info("Stream: Reusing a previous SegmentSink for the type", bufferType);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return segmentSinkStatus.value;
   }
   const codec = getFirstDeclaredMimeType(adaptation);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return segmentSinksStore.createSegmentSink(bufferType, codec);
 }
 
@@ -472,10 +470,14 @@ function createOrReuseSegmentSink(
  * @returns {string}
  */
 function getFirstDeclaredMimeType(adaptation: IAdaptation): string {
-  const representations = adaptation.representations.filter((r) => {
-    return r.isSupported === true && r.decipherable !== false;
-  });
-  if (representations.length === 0) {
+  const representations = adaptation.representations.filter(
+    (r) => r.isPlayable() !== false,
+  );
+  if (representations.length > 0) {
+    return representations[0].getMimeTypeString();
+  } else if (adaptation.representations.length > 0) {
+    return adaptation.representations[0].getMimeTypeString();
+  } else {
     const noRepErr = new MediaError(
       "NO_PLAYABLE_REPRESENTATION",
       "No Representation in the chosen " + adaptation.type + " Adaptation can be played",
@@ -483,7 +485,6 @@ function getFirstDeclaredMimeType(adaptation: IAdaptation): string {
     );
     throw noRepErr;
   }
-  return representations[0].getMimeTypeString();
 }
 
 /**

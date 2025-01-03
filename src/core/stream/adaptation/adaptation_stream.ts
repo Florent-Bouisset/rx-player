@@ -95,10 +95,7 @@ export default function AdaptationStream(
 
   const initialRepIds = content.representations.getValue().representationIds;
   const initialRepresentations = content.adaptation.representations.filter(
-    (r) =>
-      arrayIncludes(initialRepIds, r.id) &&
-      r.decipherable !== false &&
-      r.isSupported !== false,
+    (r) => arrayIncludes(initialRepIds, r.id) && r.isPlayable() !== false,
   );
 
   /** Emit the list of Representation for the adaptive logic. */
@@ -116,6 +113,22 @@ export default function AdaptationStream(
     adapStreamCanceller.signal,
   );
 
+  const isMediaSegmentQueueInterrupted = new SharedReference<boolean>(false);
+  /** Update the `canLoad` ref on observation update */
+  playbackObserver.listen(
+    (observation) => {
+      const observationCanStream = observation.canStream ?? true;
+      if (isMediaSegmentQueueInterrupted.getValue() === observationCanStream) {
+        log.debug(
+          "Stream: isMediaSegmentQueueInterrupted updated to",
+          !observationCanStream,
+        );
+        isMediaSegmentQueueInterrupted.setValue(!observationCanStream);
+      }
+    },
+    { clearSignal: adapStreamCanceller.signal },
+  );
+
   /** Allows a `RepresentationStream` to easily fetch media segments. */
   const segmentQueue = segmentQueueCreator.createSegmentQueue(
     adaptation.type,
@@ -126,6 +139,7 @@ export default function AdaptationStream(
       onProgress: abrCallbacks.requestProgress,
       onMetrics: abrCallbacks.metrics,
     },
+    isMediaSegmentQueueInterrupted,
   );
   /* eslint-enable @typescript-eslint/unbound-method */
 
@@ -319,11 +333,11 @@ export default function AdaptationStream(
       representation,
     };
     currentRepresentation.setValue(representation);
-    if (adapStreamCanceller.isUsed()) {
+    if (fnCancelSignal.isCancelled()) {
       return; // previous callback has stopped everything by side-effect
     }
     callbacks.representationChange(repInfo);
-    if (adapStreamCanceller.isUsed()) {
+    if (fnCancelSignal.isCancelled()) {
       return; // previous callback has stopped everything by side-effect
     }
 
@@ -436,7 +450,7 @@ export default function AdaptationStream(
 
           // We wait 4 seconds to let the situation evolve by itself before
           // retrying loading segments with a lower buffer goal
-          cancellableSleep(4000, adapStreamCanceller.signal)
+          cancellableSleep(4000, fnCancelSignal)
             .then(() => {
               return createRepresentationStream(
                 representation,

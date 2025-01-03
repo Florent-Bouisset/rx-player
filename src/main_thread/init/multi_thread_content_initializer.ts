@@ -59,7 +59,10 @@ import sendMessage from "./send_message";
 import type { ITextDisplayerOptions } from "./types";
 import { ContentInitializer } from "./types";
 import createCorePlaybackObserver from "./utils/create_core_playback_observer";
-import { resetMediaElement } from "./utils/create_media_source";
+import {
+  resetMediaElement,
+  disableRemotePlaybackOnManagedMediaSource,
+} from "./utils/create_media_source";
 import type { IInitialTimeOptions } from "./utils/get_initial_time";
 import getInitialTime from "./utils/get_initial_time";
 import getLoadedReference from "./utils/get_loaded_reference";
@@ -460,6 +463,10 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
                     resetMediaElement(mediaElement, mediaSourceLink.value);
                   });
                 }
+                disableRemotePlaybackOnManagedMediaSource(
+                  mediaElement,
+                  this._currentMediaSourceCanceller.signal,
+                );
                 mediaSourceStatus.setValue(MediaSourceInitializationStatus.Attached);
               }
             },
@@ -901,46 +908,52 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
           const ref = new SharedReference<IAdaptationChoice | null | undefined>(
             undefined,
           );
-          ref.onUpdate((adapChoice) => {
-            if (this._currentContentInfo === null) {
-              ref.finish();
-              return;
-            }
-            if (!isNullOrUndefined(adapChoice)) {
-              adapChoice.representations.onUpdate((repChoice, stopListening) => {
-                if (this._currentContentInfo === null) {
-                  stopListening();
-                  return;
-                }
-                sendMessage(this._settings.worker, {
-                  type: MainThreadMessageType.RepresentationUpdate,
-                  contentId: this._currentContentInfo.contentId,
-                  value: {
-                    periodId: msgData.value.periodId,
-                    adaptationId: adapChoice.adaptationId,
-                    bufferType: msgData.value.bufferType,
-                    choice: repChoice,
+          ref.onUpdate(
+            (adapChoice) => {
+              if (this._currentContentInfo === null) {
+                ref.finish();
+                return;
+              }
+              if (!isNullOrUndefined(adapChoice)) {
+                adapChoice.representations.onUpdate(
+                  (repChoice, stopListening) => {
+                    if (this._currentContentInfo === null) {
+                      stopListening();
+                      return;
+                    }
+                    sendMessage(this._settings.worker, {
+                      type: MainThreadMessageType.RepresentationUpdate,
+                      contentId: this._currentContentInfo.contentId,
+                      value: {
+                        periodId: msgData.value.periodId,
+                        adaptationId: adapChoice.adaptationId,
+                        bufferType: msgData.value.bufferType,
+                        choice: repChoice,
+                      },
+                    });
                   },
-                });
+                  { clearSignal: this._initCanceller.signal },
+                );
+              }
+              sendMessage(this._settings.worker, {
+                type: MainThreadMessageType.TrackUpdate,
+                contentId: this._currentContentInfo.contentId,
+                value: {
+                  periodId: msgData.value.periodId,
+                  bufferType: msgData.value.bufferType,
+                  choice: isNullOrUndefined(adapChoice)
+                    ? adapChoice
+                    : {
+                        adaptationId: adapChoice.adaptationId,
+                        switchingMode: adapChoice.switchingMode,
+                        initialRepresentations: adapChoice.representations.getValue(),
+                        relativeResumingPosition: adapChoice.relativeResumingPosition,
+                      },
+                },
               });
-            }
-            sendMessage(this._settings.worker, {
-              type: MainThreadMessageType.TrackUpdate,
-              contentId: this._currentContentInfo.contentId,
-              value: {
-                periodId: msgData.value.periodId,
-                bufferType: msgData.value.bufferType,
-                choice: isNullOrUndefined(adapChoice)
-                  ? adapChoice
-                  : {
-                      adaptationId: adapChoice.adaptationId,
-                      switchingMode: adapChoice.switchingMode,
-                      initialRepresentations: adapChoice.representations.getValue(),
-                      relativeResumingPosition: adapChoice.relativeResumingPosition,
-                    },
-              },
-            });
-          });
+            },
+            { clearSignal: this._initCanceller.signal },
+          );
           this.trigger("periodStreamReady", {
             period,
             type: msgData.value.bufferType,
@@ -1787,6 +1800,10 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
                 resetMediaElement(mediaElement, url);
               });
               mediaSourceStatus.setValue(MediaSourceInitializationStatus.Attached);
+              disableRemotePlaybackOnManagedMediaSource(
+                mediaElement,
+                this._currentMediaSourceCanceller.signal,
+              );
             }
           },
           {
