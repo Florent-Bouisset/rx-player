@@ -1,4 +1,10 @@
-import { isA1KStb40xx, isPanasonic, isPhilipsNetTv, isWebOs } from "./browser_detection";
+import {
+  isA1KStb40xx,
+  isFirefox,
+  isPanasonic,
+  isPhilipsNetTv,
+  isWebOs,
+} from "./browser_detection";
 
 /**
  * Returns `true` if a `MediaKeys` instance (the  `Encrypted Media Extension`
@@ -19,5 +25,5 @@ import { isA1KStb40xx, isPanasonic, isPhilipsNetTv, isWebOs } from "./browser_de
  * @returns {boolean}
  */
 export default function canReuseMediaKeys(): boolean {
-  return !isWebOs && !isPhilipsNetTv && !isPanasonic && !isA1KStb40xx;
+  return !isWebOs && !isPhilipsNetTv && !isPanasonic && !isA1KStb40xx && !isFirefox;
 }
