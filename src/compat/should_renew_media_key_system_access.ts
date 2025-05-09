@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { isIE11 } from "./browser_detection";
+// import { isIE11 } from "./browser_detection";
 
 /**
  * Returns true if the current target require the MediaKeySystemAccess to be
@@ -22,5 +22,6 @@ import { isIE11 } from "./browser_detection";
  * @returns {Boolean}
  */
 export default function shouldRenewMediaKeySystemAccess(): boolean {
-  return isIE11;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, no-restricted-properties, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+  return (window as any)._RENEW_MEDIA_KEY_SYSTEM_ACCESS ?? true;
 }
