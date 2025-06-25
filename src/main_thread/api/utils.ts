@@ -242,9 +242,12 @@ export function getLoadedContentState(
       return PLAYER_STATES.FREEZING;
     }
 
-    if (stalledStatus === "not-ready" && (isSafariMobile || isSafariDesktop)) {
+    if (
+      (stalledStatus === "not-ready" || stalledStatus === "internal-seek") &&
+      (isSafariMobile || isSafariDesktop)
+    ) {
       /*
-       * On Safari, the readyState may remain at 1 until play() is called.
+       * On Safari, the readyState may remain at 1 with seeking: true until play() is called.
        * Therefore, using the LOADED state is more appropriate in this case.
        */
       return PLAYER_STATES.LOADED;
