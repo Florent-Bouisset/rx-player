@@ -307,7 +307,13 @@ function getDirectFileInitialTime(
   if (!isNullOrUndefined(startAt.position)) {
     return startAt.position;
   } else if (!isNullOrUndefined(startAt.wallClockTime)) {
-    return startAt.wallClockTime;
+    // eslint-disable-next-line no-console
+    console.warn("PATCH startDate for safari");
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/ban-ts-comment
+    // @ts-expect-error
+    const startDate = mediaElement.getStartDate() as Date;
+    const startTime = startDate.getTime();
+    return startTime - startAt.wallClockTime;
   } else if (!isNullOrUndefined(startAt.fromFirstPosition)) {
     return startAt.fromFirstPosition;
   }
