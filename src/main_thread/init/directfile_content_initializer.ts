@@ -307,13 +307,38 @@ function getDirectFileInitialTime(
   if (!isNullOrUndefined(startAt.position)) {
     return startAt.position;
   } else if (!isNullOrUndefined(startAt.wallClockTime)) {
-    // eslint-disable-next-line no-console
-    console.warn("PATCH startDate for safari");
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/ban-ts-comment
     // @ts-expect-error
     const startDate = mediaElement.getStartDate() as Date;
+
     const startTime = startDate.getTime();
-    return startTime - startAt.wallClockTime;
+    const startTimeSafe = isNaN(startTime) ? 0 : startTime;
+    // eslint-disable-next-line no-console
+    console.warn(
+      "PATCH startDate for safari",
+      startAt.wallClockTime - startTimeSafe,
+      startAt.wallClockTime,
+      startTimeSafe,
+    );
+
+    setTimeout(() => {
+      if (isNullOrUndefined(startAt.wallClockTime)) {
+        return;
+      }
+      // eslint-disable-next-line no-console
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      const s = mediaElement.getStartDate() as Date;
+
+      const stime = s.getTime();
+      const stimeSafe = isNaN(stime) ? 0 : stime;
+      const seekPos = startAt.wallClockTime - stimeSafe;
+      // eslint-disable-next-line no-console
+      console.warn("Forcing seek on safari", seekPos, startAt.wallClockTime, stimeSafe);
+      mediaElement.currentTime = seekPos;
+    }, 2000);
+
+    return startAt.wallClockTime - startTimeSafe;
   } else if (!isNullOrUndefined(startAt.fromFirstPosition)) {
     return startAt.fromFirstPosition;
   }
