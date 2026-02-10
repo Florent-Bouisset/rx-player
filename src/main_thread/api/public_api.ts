@@ -2820,6 +2820,11 @@ class Player extends EventEmitter<IPublicAPIEvent> {
       if (this.videoElement === null) {
         throw new Error("Disposed player");
       }
+
+      if (this.videoElement.seekable.length > 0) {
+        return this.videoElement.seekable.end(this.videoElement.seekable.length - 1);
+      }
+      // if for some reason seekable has no entry, fallback on duration
       return this.videoElement.duration;
     }
 
@@ -3525,6 +3530,22 @@ class Player extends EventEmitter<IPublicAPIEvent> {
       const startDate = getStartDate(this.videoElement);
       if (startDate !== undefined) {
         positionData.wallClockTime = startDate + observation.position.getPolled();
+      }
+
+      let directFileMaximumPosition;
+      if (this.videoElement.seekable.length > 0) {
+        directFileMaximumPosition = this.videoElement.seekable.end(
+          this.videoElement.seekable.length - 1,
+        );
+      }
+
+      if (directFileMaximumPosition !== undefined && !isNaN(directFileMaximumPosition)) {
+        positionData.maximumPosition = directFileMaximumPosition;
+        // infinity duration means the content is live
+        if (this.videoElement.duration === Infinity) {
+          positionData.liveGap =
+            directFileMaximumPosition - this.videoElement.currentTime;
+        }
       }
     }
     this.trigger("positionUpdate", positionData);

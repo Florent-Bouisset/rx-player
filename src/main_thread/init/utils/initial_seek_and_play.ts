@@ -143,9 +143,9 @@ export default function performInitialSeekAndPlay(
                */
               return;
             }
-            if (obs.readyState >= 1) {
+            if (obs.readyState >= 2) {
               stopListening();
-              if (initiallySeekedTime !== 0 && initiallySeekedTime !== undefined) {
+              if (initiallySeekedTime !== undefined) {
                 performInitialSeek(initiallySeekedTime);
               } else {
                 playbackObserver.unblockSeeking();
