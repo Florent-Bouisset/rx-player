@@ -42,6 +42,7 @@ import EnvDetector from "./env_detector";
  * @returns {boolean}
  */
 export function canRelyOnRequestMediaKeySystemAccess(keySystem: string): boolean {
+  return true;
   const { FORCE_CANNOT_RELY_ON_REQUEST_MEDIA_KEY_SYSTEM_ACCESS } = config.getCurrent();
   if (FORCE_CANNOT_RELY_ON_REQUEST_MEDIA_KEY_SYSTEM_ACCESS) {
     return false;
