@@ -912,13 +912,7 @@ const DEFAULT_CONFIG = {
    * Defined in order of importance (first will be tested first etc.)
    * @type {Array.<string>}
    */
-  EME_DEFAULT_WIDEVINE_ROBUSTNESSES: [
-    "HW_SECURE_ALL",
-    "HW_SECURE_DECODE",
-    "HW_SECURE_CRYPTO",
-    "SW_SECURE_DECODE",
-    "SW_SECURE_CRYPTO",
-  ],
+  EME_DEFAULT_WIDEVINE_ROBUSTNESSES: ["SW_SECURE_DECODE"],
 
   /**
    * Robustnesses used in the {audio,video}Capabilities of the
