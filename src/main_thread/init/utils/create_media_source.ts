@@ -160,7 +160,16 @@ export default function openMediaSource(
       });
     } else {
       const url = URL.createObjectURL(mediaSource.handle.value);
-      mediaElement.src = url;
+      mediaElement.removeAttribute("src");
+
+      const source = document.createElement("source");
+      source.src = url;
+      source.type = "";
+
+      mediaElement.appendChild(source);
+      // @ts-ignore
+      mediaElement.load();
+
       unlinkSignal.register(() => {
         resetMediaElement(mediaElement, url);
       });
