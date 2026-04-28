@@ -1263,6 +1263,12 @@ const DEFAULT_CONFIG = {
   // Compatibility toggles:
 
   /**
+   * If set to `true`, we will not patch out a `pssh` box if found in an
+   * ISOBMFF segment.
+   */
+  PREVENT_PSSH_PATCHING: false,
+
+  /**
    * If set to `true`, we'll always try to check thoroughly that a
    * `MediaKeySystemAccess` can be relied on.
    */
@@ -1333,6 +1339,12 @@ const DEFAULT_CONFIG = {
    * announcing the content as loaded.
    */
   FORCE_WAIT_FOR_HAVE_ENOUGH_DATA: false,
+
+  /**
+   * If `true`, forces an initial seek to 0. Mainly needed for Safari HLS,
+   * where the player may start at the live position instead of 0.
+   */
+  FORCE_INITIAL_SEEK_TO_ZERO: false,
 };
 
 export type IDefaultConfig = typeof DEFAULT_CONFIG;

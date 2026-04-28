@@ -27,6 +27,7 @@ import type {
 } from "../../manifest";
 import type { IReadOnlyPlaybackObserver } from "../../playback_observer";
 import type { IPlayerError } from "../../public_types";
+import arrayIncludes from "../../utils/array_includes";
 import EventEmitter from "../../utils/event_emitter";
 import isNullOrUndefined from "../../utils/is_null_or_undefined";
 import queueMicrotask from "../../utils/queue_microtask";
@@ -92,6 +93,15 @@ export default class ContentTimeBoundariesObserver extends EventEmitter<IContent
      * whole content.
      */
     const maximumPositionCalculator = new MaximumPositionCalculator(manifest);
+
+    // Indicate directly that no Adaptation of a particular type will be set
+    if (!arrayIncludes(this._allBufferTypes, "video")) {
+      maximumPositionCalculator.updateLastVideoAdaptation(null);
+    }
+    if (!arrayIncludes(this._allBufferTypes, "audio")) {
+      maximumPositionCalculator.updateLastAudioAdaptation(null);
+    }
+
     this._maximumPositionCalculator = maximumPositionCalculator;
 
     const cancelSignal = this._canceller.signal;
@@ -103,11 +113,20 @@ export default class ContentTimeBoundariesObserver extends EventEmitter<IContent
       playbackObserver.listen(
         ({ position }) => {
           const wantedPosition = position.getWanted();
-          if (wantedPosition < manifest.getMinimumSafePosition()) {
+          const minimumPosition = manifest.getMinimumSafePosition();
+          const maximumPosition = manifest.getMaximumSafePosition();
+          if (wantedPosition < minimumPosition) {
             const warning = new MediaError(
               "MEDIA_TIME_BEFORE_MANIFEST",
               "The current position is behind the " +
                 "earliest time announced in the Manifest.",
+              {
+                timeInfo: {
+                  position: wantedPosition,
+                  minPosition: minimumPosition,
+                  maxPosition: maximumPosition,
+                },
+              },
             );
             this.trigger("warning", warning);
           } else if (
@@ -117,6 +136,13 @@ export default class ContentTimeBoundariesObserver extends EventEmitter<IContent
               "MEDIA_TIME_AFTER_MANIFEST",
               "The current position is after the latest " +
                 "time announced in the Manifest.",
+              {
+                timeInfo: {
+                  position: wantedPosition,
+                  minPosition: minimumPosition,
+                  maxPosition: maximumPosition,
+                },
+              },
             );
             this.trigger("warning", warning);
           }

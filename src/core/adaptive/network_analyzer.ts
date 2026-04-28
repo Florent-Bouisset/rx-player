@@ -29,7 +29,7 @@ import type {
 } from "./utils/pending_requests_store";
 
 /** Object describing the current playback conditions. */
-type IPlaybackConditionsInfo = Pick<
+export type IPlaybackConditionsInfo = Pick<
   IRepresentationEstimatorPlaybackObservation,
   "bufferGap" | "position" | "speed" | "duration"
 >;
@@ -166,9 +166,9 @@ function estimateStarvationModeBitrate(
   const concernedRequest = concernedRequests[0];
   const now = getMonotonicTimeStamp();
 
-  let minimumRequestTime = concernedRequest.content.segment.duration * 1.5;
-  minimumRequestTime = Math.min(minimumRequestTime, 3000);
-  minimumRequestTime = Math.max(minimumRequestTime, 12000);
+  let minimumRequestTime = concernedRequest.content.segment.duration * 1500;
+  minimumRequestTime = Math.max(minimumRequestTime, 3000);
+  minimumRequestTime = Math.min(minimumRequestTime, 12000);
   if (now - concernedRequest.requestTimestamp < minimumRequestTime) {
     return undefined;
   }

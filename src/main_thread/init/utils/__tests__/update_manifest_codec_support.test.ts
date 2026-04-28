@@ -77,12 +77,22 @@ function generateFakeManifestWithRepresentations(
 beforeAll(() => {
   // Mock MediaSource APIs
   vi.mock("../../../../compat/browser_compatibility_types", () => ({
-    // eslint-disable-next-line @typescript-eslint/no-extraneous-class
-    MediaSource_: class {
-      static isTypeSupported(type: string) {
-        // Mocked behavior: return true for all codecs and return false for vp9 codec
-        return type.indexOf("vp9") === -1;
-      }
+    default: {
+      READY_STATES: {
+        HAVE_NOTHING: 0,
+        HAVE_METADATA: 1,
+        HAVE_CURRENT_DATA: 2,
+        HAVE_FUTURE_DATA: 3,
+        HAVE_ENOUGH_DATA: 4,
+      },
+      isManagedMediaSource: false,
+      // eslint-disable-next-line @typescript-eslint/no-extraneous-class
+      MediaSource_: class {
+        static isTypeSupported(type: string) {
+          // Mocked behavior: return true for all codecs and return false for vp9 codec
+          return type.indexOf("vp9") === -1;
+        }
+      },
     },
   }));
 
@@ -139,7 +149,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 1000,
       id: "representation1",
       uniqueId: "representation1",
-      codecs: ["avc1.4d401e"],
+      baseCodecs: ["avc1.4d401e"],
+      chosenCodec: "avc1.4d401e",
       mimeType: "video/mp4",
       isSupported: undefined,
     };
@@ -148,7 +159,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 2000,
       id: "representation2",
       uniqueId: "representation2",
-      codecs: ["hvc1.2.4.L153.B0"],
+      baseCodecs: ["hvc1.2.4.L153.B0"],
+      chosenCodec: "hvc1.2.4.L153.B0",
       mimeType: "video/mp4",
       isSupported: undefined,
     };
@@ -157,7 +169,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 3000,
       id: "representation3",
       uniqueId: "representation3",
-      codecs: ["vp9"],
+      baseCodecs: ["vp9"],
+      chosenCodec: "vp9",
       mimeType: "video/mp4",
       isSupported: undefined,
     };
@@ -166,7 +179,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 1000,
       id: "representation4",
       uniqueId: "representation4",
-      codecs: ["mp4a.40.2"],
+      baseCodecs: ["mp4a.40.2"],
+      chosenCodec: "mp4a.40.2",
       mimeType: "audio/mp4",
       isSupported: undefined,
     };
@@ -175,7 +189,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 2000,
       id: "representation5",
       uniqueId: "representation5",
-      codecs: ["ec-3"],
+      baseCodecs: ["ec-3"],
+      chosenCodec: "ec-3",
       mimeType: "audio/mp4",
       isSupported: undefined,
     };
@@ -222,7 +237,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 1000,
       id: "representation1",
       uniqueId: "representation1",
-      codecs: ["avc1.4d401e"],
+      baseCodecs: ["avc1.4d401e"],
+      chosenCodec: "avc1.4d401e",
       mimeType: "video/mp4",
       contentProtections: fakeContentProtection,
     };
@@ -231,7 +247,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 2000,
       id: "representation2",
       uniqueId: "representation2",
-      codecs: ["hvc1.2.4.L153.B0"],
+      baseCodecs: ["hvc1.2.4.L153.B0"],
+      chosenCodec: "hvc1.2.4.L153.B0",
       mimeType: "video/mp4",
       contentProtections: fakeContentProtection,
     };
@@ -240,7 +257,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 2000,
       id: "representation3",
       uniqueId: "representation3",
-      codecs: ["vp9"],
+      baseCodecs: ["vp9"],
+      chosenCodec: "vp9",
       mimeType: "video/mp4",
       contentProtections: fakeContentProtection,
     };
@@ -249,7 +267,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 1000,
       id: "representation4",
       uniqueId: "representation4",
-      codecs: ["mp4a.40.2"],
+      baseCodecs: ["mp4a.40.2"],
+      chosenCodec: "mp4a.40.2",
       mimeType: "audio/mp4",
       contentProtections: fakeContentProtection,
     };
@@ -258,7 +277,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 2000,
       id: "representation5",
       uniqueId: "representation5",
-      codecs: ["ec-3"],
+      baseCodecs: ["ec-3"],
+      chosenCodec: "ec-3",
       mimeType: "audio/mp4",
       contentProtections: fakeContentProtection,
     };
@@ -303,7 +323,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 1000,
       id: "representation1",
       uniqueId: "representation1",
-      codecs: ["avc1.4d401e"],
+      baseCodecs: ["avc1.4d401e"],
+      chosenCodec: "avc1.4d401e",
       mimeType: "video/mp4",
       isSupported: undefined,
       isCodecSupportedInWebWorker: undefined,
@@ -312,7 +333,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 2000,
       id: "representation2",
       uniqueId: "representation2",
-      codecs: ["hvc1.2.4.L153.B0"],
+      baseCodecs: ["hvc1.2.4.L153.B0"],
+      chosenCodec: "hvc1.2.4.L153.B0",
       mimeType: "video/mp4",
       isSupported: undefined,
       isCodecSupportedInWebWorker: false,
@@ -322,7 +344,8 @@ describe("init - utils - updateManifestCodecSupport", () => {
       bitrate: 1000,
       id: "representation4",
       uniqueId: "representation4",
-      codecs: ["mp4a.40.2"],
+      baseCodecs: ["mp4a.40.2"],
+      chosenCodec: "mp4a.40.2",
       mimeType: "audio/mp4",
       isSupported: undefined,
       isCodecSupportedInWebWorker: true,

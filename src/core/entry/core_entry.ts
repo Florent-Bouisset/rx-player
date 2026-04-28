@@ -36,13 +36,12 @@ import type {
 } from "../types";
 import { CoreMessageType } from "../types";
 import ContentPreparer from "./content_preparer";
-import type { ICorePlugins } from "./content_preparer";
 import createContentTimeBoundariesObserver from "./create_content_time_boundaries_observer";
 import type { IFreezeResolution } from "./FreezeResolver";
 import getBufferedDataPerMediaBuffer from "./get_buffered_data_per_media_buffer";
 import getThumbnailData from "./get_thumbnail_data";
-import synchronizeSegmentSinksOnObservation from "./synchronize_sinks_on_observation";
-import { formatErrorForSender } from "./utils";
+import type { ICorePlugins } from "./utils";
+import { formatErrorForSender, synchronizeSegmentSinksOnObservation } from "./utils";
 
 export type IMessageReceiverCallback = (evt: { data: IMainThreadMessage }) => void;
 
@@ -795,17 +794,6 @@ function loadPreparedContent(
         },
 
         adaptationChange(value) {
-          contentTimeBoundariesObserver.onAdaptationChange(
-            value.type,
-            value.period,
-            value.adaptation,
-          );
-          if (
-            currentLoadCanceller === null ||
-            currentLoadCanceller.signal.isCancelled()
-          ) {
-            return;
-          }
           sendMessage({
             type: CoreMessageType.AdaptationChanged,
             contentId,
@@ -815,6 +803,11 @@ function loadPreparedContent(
               type: value.type,
             },
           });
+          contentTimeBoundariesObserver.onAdaptationChange(
+            value.type,
+            value.period,
+            value.adaptation,
+          );
         },
 
         representationChange(value) {
@@ -1228,6 +1221,10 @@ function sendThumbnailData(
     msg.value.time,
   ).then(
     (result) => {
+      // Multiple thumbnail requests can share the same fetched payload.
+      // Transfer a copy here so replying to one request does not detach the
+      // ArrayBuffer that still has to be sent to another requester.
+      const data = result.data.slice(0);
       sendMessage(
         {
           type: CoreMessageType.ThumbnailDataResponse,
@@ -1235,10 +1232,10 @@ function sendThumbnailData(
           value: {
             status: "success",
             requestId: msg.value.requestId,
-            data: result,
+            data: { ...result, data },
           },
         },
-        [result.data],
+        [data],
       );
     },
     (err) => {

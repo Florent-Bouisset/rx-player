@@ -1,9 +1,10 @@
 import { describe, afterEach, it, expect, vi } from "vitest";
+import getEmeApiImplementation from "../../../../compat/eme";
 import type { IKeySystemOption, IPlayerError } from "../../../../public_types";
 import assert from "../../../../utils/assert";
 import { concat } from "../../../../utils/byte_parsing";
-import type IContentDecryptor from "../../content_decryptor";
-import type { ContentDecryptorState as IContentDecryptorState } from "../../types";
+import ContentDecryptor from "../../content_decryptor";
+import { ContentDecryptorState } from "../../types";
 import {
   formatFakeChallengeFromInitData,
   MediaKeySessionImpl,
@@ -11,13 +12,46 @@ import {
   mockCompat,
 } from "./utils";
 
-/** Default video element used in our tests. */
-const videoElt = document.createElement("video");
+const mocks = vi.hoisted(() => {
+  return {
+    shouldRenewMediaKeySystemAccess: vi.fn(() => false),
+    canReuseMediaKeys: vi.fn(() => true),
+    onEncrypted: vi.fn(),
+    requestMediaKeySystemAccess: vi.fn(),
+    setMediaKeys: vi.fn(),
+    getInitData: vi.fn(),
+    generateKeyRequest: vi.fn(),
+  };
+});
+vi.mock("../../../../compat/should_renew_media_key_system_access", () => ({
+  default: mocks.shouldRenewMediaKeySystemAccess,
+}));
+vi.mock("../../../../compat/can_reuse_media_keys", () => ({
+  default: mocks.canReuseMediaKeys,
+}));
+vi.mock("../../../../compat/eme", () => ({
+  default: () => ({
+    onEncrypted: mocks.onEncrypted,
+    requestMediaKeySystemAccess: mocks.requestMediaKeySystemAccess,
+    setMediaKeys: mocks.setMediaKeys,
+  }),
+  getInitData: mocks.getInitData,
+  generateKeyRequest: mocks.generateKeyRequest,
+  closeSession: vi.fn(),
+  loadSession: vi.fn(),
+}));
 
 describe("decrypt - global tests - getLicense", () => {
   afterEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
+    mocks.shouldRenewMediaKeySystemAccess.mockReset();
+    mocks.canReuseMediaKeys.mockReset();
+    mocks.onEncrypted.mockReset();
+    mocks.requestMediaKeySystemAccess.mockReset();
+    mocks.setMediaKeys.mockReset();
+    mocks.getInitData.mockReset();
+    mocks.generateKeyRequest.mockReset();
   });
 
   it("should update the session after getLicense resolves with a license", async () => {
@@ -250,6 +284,76 @@ describe("decrypt - global tests - getLicense", () => {
       ignoreLicenseRequests: false,
     });
   }, 15000);
+
+  it("should emit KEY_LOAD_TIMEOUT when getLicense times out", async () => {
+    const initData = new Uint8Array([54, 55, 75]);
+    const initDataEvent = {
+      type: "cenc",
+      values: [{ systemId: "15", data: initData }],
+    };
+    const challenge = formatFakeChallengeFromInitData(initData, "cenc");
+    const mediaKeySession = new MediaKeySessionImpl();
+    vi.spyOn(MediaKeysImpl.prototype, "createSession").mockReturnValue(mediaKeySession);
+    const mockGetLicense = vi.fn(() => {
+      return new Promise<BufferSource>((resolve) => {
+        setTimeout(() => {
+          resolve(challenge);
+        }, 30);
+      });
+    });
+
+    const videoElt = document.createElement("video");
+    mockCompat(mocks);
+
+    await new Promise<void>((res, rej) => {
+      const ksConfig: IKeySystemOption[] = [
+        {
+          type: "com.widevine.alpha",
+          getLicense: mockGetLicense,
+          getLicenseConfig: {
+            retry: 0,
+            timeout: 5,
+          },
+        },
+      ];
+      const eme = getEmeApiImplementation("auto");
+      assert(eme !== null);
+      const contentDecryptor = new ContentDecryptor(eme, videoElt, ksConfig);
+
+      contentDecryptor.addEventListener("stateChange", (newState: number) => {
+        if (newState !== ContentDecryptorState.WaitingForAttachment) {
+          rej(new Error(`Unexpected state: ${newState}`));
+          return;
+        }
+        contentDecryptor.removeEventListener("stateChange");
+        contentDecryptor.attach();
+      });
+
+      contentDecryptor.addEventListener("warning", (warning: Error) => {
+        rej(new Error(`Unexpected warning: ${warning.toString()}`));
+      });
+
+      contentDecryptor.addEventListener("error", (error: Error) => {
+        try {
+          expect(error).toBeInstanceOf(Error);
+          expect((error as IPlayerError).name).toEqual("EncryptedMediaError");
+          expect((error as IPlayerError).type).toEqual("ENCRYPTED_MEDIA_ERROR");
+          expect((error as IPlayerError).code).toEqual("KEY_LOAD_TIMEOUT");
+          expect((error as IPlayerError).message).toEqual(
+            "KEY_LOAD_TIMEOUT: The license server took too much time to respond.",
+          );
+          expect(mockGetLicense).toHaveBeenCalledTimes(1);
+          expect(mockGetLicense).toHaveBeenNthCalledWith(1, challenge, "license-request");
+          contentDecryptor.dispose(undefined);
+          res();
+        } catch (e) {
+          rej(e);
+        }
+      });
+
+      contentDecryptor.onInitializationData(initDataEvent);
+    });
+  });
 });
 
 /**
@@ -335,12 +439,8 @@ async function checkGetLicense({
     }
     return Promise.reject(new Error("AAAA"));
   });
-  mockCompat();
-  const ContentDecryptorState = (await vi.importActual("../../types"))
-    .ContentDecryptorState as typeof IContentDecryptorState;
-  const ContentDecryptor = (await vi.importActual("../../content_decryptor"))
-    .default as typeof IContentDecryptor;
-  const getEmeApiImplementation = (await import("../../../../compat/eme")).default;
+  const videoElt = document.createElement("video");
+  mockCompat(mocks);
   return new Promise((res, rej) => {
     // == vars ==
     /** Default keySystems configuration used in our tests. */

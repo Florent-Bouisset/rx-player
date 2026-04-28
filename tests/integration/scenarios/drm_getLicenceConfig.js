@@ -1,5 +1,5 @@
 import { describe, beforeEach, afterEach, it, expect } from "vitest";
-import { manifestInfos } from "../../contents/DASH_DRM_static_SegmentTemplate";
+import { manifestInfos } from "../../contents/static/DASH_DRM_static_SegmentTemplate";
 import DummyMediaElement from "../../../dist/es2017/experimental/tools/DummyMediaElement";
 import RxPlayer from "../../../dist/es2017";
 import waitForPlayerState from "../../utils/waitForPlayerState";
@@ -217,7 +217,7 @@ describe("DRM: getLicenseConfig", () => {
     expect(askedKeyIds).toEqual({});
     const error = player.getError();
     expect(error).not.toBeNull();
-    expect(error.code).to.equal("KEY_LOAD_ERROR");
+    expect(error.code).to.equal("KEY_LOAD_TIMEOUT");
     expect(error.name).to.equal("EncryptedMediaError");
     expect(error.type).to.equal("ENCRYPTED_MEDIA_ERROR");
   });

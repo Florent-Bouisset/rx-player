@@ -1244,31 +1244,31 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           ) {
             log.warn(
               "API",
-              "You only set a representationFilter function in a mulithreaded mode, ignoring it...",
+              "You set a `representationFilter` function without a `workerId` while loading in multithread mode. That function cannot run in the worker, so it will be ignored.",
             );
           }
         }
         if (
           transportOptions.manifestLoader !== undefined &&
-          !isNullOrUndefined(transportOptions.manifestLoader.workerId)
+          !isNullOrUndefined(transportOptions.manifestLoader.fn)
         ) {
           transportOptions.manifestLoader.fn = undefined;
-          if (isNullOrUndefined(transportOptions.manifestLoader.fn)) {
+          if (isNullOrUndefined(transportOptions.manifestLoader.workerId)) {
             log.warn(
               "API",
-              "You only set a manifestLoader function in a mulithreaded mode, ignoring it...",
+              "You set a `manifestLoader` function without a `workerId` while loading in multithread mode. That function cannot run in the worker, so it will be ignored.",
             );
           }
         }
         if (
           transportOptions.segmentLoader !== undefined &&
-          !isNullOrUndefined(transportOptions.segmentLoader.workerId)
+          !isNullOrUndefined(transportOptions.segmentLoader.fn)
         ) {
           transportOptions.segmentLoader.fn = undefined;
-          if (isNullOrUndefined(transportOptions.segmentLoader.fn)) {
+          if (isNullOrUndefined(transportOptions.segmentLoader.workerId)) {
             log.warn(
               "API",
-              "You only set a segmentLoader function in a mulithreaded mode, ignoring it...",
+              "You set a `segmentLoader` function without a `workerId` while loading in multithread mode. That function cannot run in the worker, so it will be ignored.",
             );
           }
         }
@@ -2772,6 +2772,13 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     }
 
     if (this._priv_contentInfos.isDirectFile) {
+      if (this.videoElement === null) {
+        log.error("API", "getMinimumPosition() called on a disposed player");
+        return 0;
+      }
+      if (this.videoElement.seekable.length > 0) {
+        return this.videoElement.seekable.start(0);
+      }
       return 0;
     }
 
@@ -2818,8 +2825,14 @@ class Player extends EventEmitter<IPublicAPIEvent> {
 
     if (isDirectFile) {
       if (this.videoElement === null) {
-        throw new Error("Disposed player");
+        log.error("API", "getMaximumPosition() called on a disposed player");
+        return null;
       }
+
+      if (this.videoElement.seekable.length > 0) {
+        return this.videoElement.seekable.end(this.videoElement.seekable.length - 1);
+      }
+      // if for some reason seekable has no entry, fallback on duration
       return this.videoElement.duration;
     }
 
@@ -3016,6 +3029,9 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     contentInfos: IPublicApiContentInfos,
     updates: IPeriodsUpdateResult,
   ): void {
+    if (contentInfos.contentId !== this._priv_contentInfos?.contentId) {
+      return; // Event for another content
+    }
     if (this._priv_contentInfos === null || this._priv_contentInfos.manifest === null) {
       return;
     }
@@ -3197,7 +3213,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
       "audioRepresentationChange",
       isNullOrUndefined(audioRepresentation)
         ? audioRepresentation
-        : toVideoRepresentation(audioRepresentation),
+        : toAudioRepresentation(audioRepresentation),
       cancelSignal,
     );
     const videoRepresentation = this.__priv_getCurrentRepresentations()?.video ?? null;
@@ -3526,6 +3542,22 @@ class Player extends EventEmitter<IPublicAPIEvent> {
       if (startDate !== undefined) {
         positionData.wallClockTime = startDate + observation.position.getPolled();
       }
+
+      let directFileMaximumPosition;
+      if (this.videoElement.seekable.length > 0) {
+        directFileMaximumPosition = this.videoElement.seekable.end(
+          this.videoElement.seekable.length - 1,
+        );
+      }
+
+      if (directFileMaximumPosition !== undefined && !isNaN(directFileMaximumPosition)) {
+        positionData.maximumPosition = directFileMaximumPosition;
+        // infinity duration means the content is live
+        if (this.videoElement.duration === Infinity) {
+          positionData.liveGap =
+            directFileMaximumPosition - this.videoElement.currentTime;
+        }
+      }
     }
     this.trigger("positionUpdate", positionData);
   }
@@ -3718,6 +3750,9 @@ class Player extends EventEmitter<IPublicAPIEvent> {
    * to the content for which the error was received.
    */
   private _priv_onFatalError(err: unknown, contentInfos: IPublicApiContentInfos): void {
+    if (contentInfos.contentId !== this._priv_contentInfos?.contentId) {
+      return; // Event for another content
+    }
     const formattedError = formatError(err, {
       defaultCode: "NONE",
       defaultReason: "An unknown error stopped content playback.",
@@ -3766,7 +3801,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
       // TODO: Make it work with multithread?
       return false;
     }
-    if (options.transport !== "dash" && options.transport !== "local") {
+    if (options.transport === "directfile") {
       return false;
     }
     if (

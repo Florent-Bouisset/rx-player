@@ -48,7 +48,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.x]
+        node-version: [24.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -66,11 +66,9 @@ jobs:
       - run: rustup target add wasm32-unknown-unknown # Needed for fmt:rust:check
       - run: npm run fmt:prettier:check # js formatting
       - run: npm run fmt:rust:check # rs formatting
-      - run: npm run check # basic checks
+      - run: npm run types:all
+      - run: npm run lint:all
       - run: npm run test:unit # Run RxPlayer unit tests
-      - run: npm run lint:demo # Lint files for our demo page
-      - run: npm run lint:tests # Lint our tests directory
-      - run: npm run lint:scripts # Lint our scripts directory
 
   integration_linux_chrome:
     uses: ./.github/workflows/integration_tests_base.yml
@@ -101,7 +99,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.x]
+        node-version: [24.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -123,7 +121,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [22.x]
+        node-version: [24.x]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
@@ -163,15 +161,19 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.x]
+        node-version: [24.x]
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          # Use the latest available patch in the current major line instead of
+          # mutating the bundled npm in-place during publishing.
+          node-version: 24
+          check-latest: true
+          package-manager-cache: false
           registry-url: "https://registry.npmjs.org"
 
       - name: Extract version from tag
@@ -194,10 +196,6 @@ jobs:
             exit 1
           fi
           echo "Canal patch check passed ✓"
-
-      # Ensure npm 11.5.1 or later is installed for OIDC
-      - name: Update npm
-        run: npm install -g npm@latest
 
       - name: Install RxPlayer dependencies
         run: npm ci
@@ -243,7 +241,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [22.x]
+        node-version: [24.x]
 
     steps:
       - uses: actions/checkout@v4
@@ -251,14 +249,14 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0 # fetch all branches and history
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: ${{ matrix.node-version }}
+          # Avoid relying on a cached lts/* alias and let setup-node resolve the
+          # newest available Node 24 patch for the release.
+          node-version: 24
+          check-latest: true
+          package-manager-cache: false
           registry-url: "https://registry.npmjs.org"
-
-      # Ensure npm 11.5.1 or later is installed for OIDC
-      - name: Update npm
-        run: npm install -g npm@latest
 
       - name: Install RxPlayer dependencies
         run: npm ci

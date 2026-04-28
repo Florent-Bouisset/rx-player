@@ -309,6 +309,11 @@ export default class ContentDecryptor extends EventEmitter<IContentDecryptorEven
           );
           if (resSsc.type === "error") {
             this.trigger("warning", resSsc.value);
+          } else if (resSsc.type === "not-supported") {
+            log.warn(
+              "DRM",
+              "Server certificate is not supported by the current MediaKeys.",
+            );
           }
         }
 
@@ -654,7 +659,7 @@ export default class ContentDecryptor extends EventEmitter<IContentDecryptorEven
             this._lockInitDataQueue();
             const indexOf = this._currentSessions.indexOf(sessionInfo);
             if (indexOf >= 0) {
-              this._currentSessions.splice(indexOf);
+              this._currentSessions.splice(indexOf, 1);
             }
             if (initializationData.content !== undefined) {
               this.trigger("keyIdsCompatibilityUpdate", {

@@ -33,13 +33,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-npm run clean:build
+npm run clean
 npm run build:wasm:release
 npm run bundle
 npm run bundle:min
 
 if [[ -n "$NO_TYPECHECK" ]]; then
-  npm run build -- --no-check
+  npm run build -- --no-typecheck
 else
   npm run build
 fi
