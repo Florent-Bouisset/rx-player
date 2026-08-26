@@ -1,8 +1,9 @@
 {
   "name": "rx-player",
   "author": "Canal+",
-  "version": "4.4.1",
+  "version": "4.5.0",
   "description": "Canal+ HTML5 Video Player",
+  "type": "module",
   "main": "./dist/commonjs/index.js",
   "module": "./dist/es2017/index.js",
   "browser": "./dist/es2017/index.js",
@@ -168,7 +169,7 @@
     "bundle": "node ./scripts/run_bundler.mjs src/index.ts --production-mode --globals --name \"RxPlayer default bundle\" -o dist/rx-player.js",
     "bundle:min": "node ./scripts/run_bundler.mjs src/index.ts --production-mode --globals --name \"RxPlayer minified bundle\" -o dist/rx-player.min.js --minify",
     "certificate": "bash ./scripts/generate_certificate.sh",
-    "check": "npm run types && npm run lint && npm run types:unit_tests",
+    "check": "npm run types && npm run lint",
     "check:all": "npm run types:all && npm run lint:all",
     "check:demo": "npm run types:demo && npm run lint:demo",
     "clean": "node ./scripts/utils/remove_dir.mjs dist",
@@ -207,7 +208,7 @@
     "types:all": "npm run types && npm run types:demo && npm run types:unit_tests && npm run types:scripts",
     "types:demo": "tsc --noEmit --project demo/",
     "types:scripts": "tsc --project ./scripts",
-    "types:unit_tests": "tsc --noEmit --project ./tsconfig.unit-tests.json",
+    "types:unit_tests": "tsc --noEmit --project ./tests/unit/tsconfig.json",
     "update-version": "bash ./scripts/update-version-number.sh"
   },
   "repository": {
@@ -217,6 +218,8 @@
   "devDependencies": {
     "@canalplus/readme.doc": "0.6.0",
     "@eslint/js": "^9.33.0",
+    "@swc/cli": "^0.8.1",
+    "@swc/core": "^1.15.47",
     "@types/react": "19.2.16",
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.40.0",

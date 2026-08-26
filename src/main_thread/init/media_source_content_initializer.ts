@@ -1,10 +1,13 @@
-import type { IMediaElement } from "../../compat/browser_compatibility_types";
-import disableRemotePlaybackOnManagedMediaSource from "../../compat/disable_remote_playback_on_managed_media_source";
-import getEmeApiImplementation from "../../compat/eme";
-import mayMediaElementFailOnUndecipherableData from "../../compat/may_media_element_fail_on_undecipherable_data";
-import resetMediaElement from "../../compat/reset_media_element";
-import shouldReloadMediaSourceOnDecipherabilityUpdate from "../../compat/should_reload_media_source_on_decipherability_update";
-import type { ISegmentSinkMetrics } from "../../core/segment_sinks/segment_sinks_store";
+import type {
+  IMediaElement,
+  IMediaSourceClass,
+} from "../../compat/browser_compatibility_types.ts";
+import disableRemotePlaybackOnManagedMediaSource from "../../compat/disable_remote_playback_on_managed_media_source.ts";
+import getEmeApiImplementation from "../../compat/eme/index.ts";
+import mayMediaElementFailOnUndecipherableData from "../../compat/may_media_element_fail_on_undecipherable_data.ts";
+import resetMediaElement from "../../compat/reset_media_element.ts";
+import shouldReloadMediaSourceOnDecipherabilityUpdate from "../../compat/should_reload_media_source_on_decipherability_update.ts";
+import type { ISegmentSinkMetrics } from "../../core/segment_sinks/segment_sinks_store.ts";
 import type {
   IAdaptiveRepresentationSelectorArguments,
   IAdaptationChoice,
@@ -13,30 +16,30 @@ import type {
   ISentError,
   ICoreMessage,
   ISentLogValue,
-} from "../../core/types";
-import { CoreMessageType } from "../../core/types";
-import type { MediaError } from "../../errors";
+} from "../../core/types.ts";
+import { CoreMessageType } from "../../core/types.ts";
+import type { MediaError } from "../../errors/index.ts";
 import {
   deserializeMediaError,
   EncryptedMediaError,
   NetworkError,
   OtherError,
   SourceBufferError,
-} from "../../errors";
-import features from "../../features";
-import log from "../../log";
-import type { IManifestMetadata } from "../../manifest";
+} from "../../errors/index.ts";
+import features from "../../features/index.ts";
+import log from "../../log.ts";
+import type { IManifestMetadata } from "../../manifest/index.ts";
 import {
   ManifestMetadataFormat,
   replicateUpdatesOnManifestMetadata,
   updateDecipherabilityFromKeyIds,
   updateDecipherabilityFromProtectionData,
-} from "../../manifest";
-import MainMediaSourceInterface from "../../mse/main_media_source_interface";
+} from "../../manifest/index.ts";
+import MainMediaSourceInterface from "../../mse/main_media_source_interface.ts";
 import type {
   IReadOnlyPlaybackObserver,
   IMediaElementPlaybackObserver,
-} from "../../playback_observer";
+} from "../../playback_observer/index.ts";
 import type {
   ICmcdOptions,
   IInitialManifest,
@@ -45,38 +48,38 @@ import type {
   IRepresentationFilter,
   IManifestLoader,
   ISegmentLoader,
-} from "../../public_types";
-import type { IThumbnailResponse, ITransportOptions } from "../../transports";
-import arrayFind from "../../utils/array_find";
-import assert, { assertUnreachable } from "../../utils/assert";
-import idGenerator from "../../utils/id_generator";
-import isNullOrUndefined from "../../utils/is_null_or_undefined";
-import type { IAcceptedLogValue } from "../../utils/logger";
-import objectAssign from "../../utils/object_assign";
-import type { IReadOnlySharedReference } from "../../utils/reference";
-import SharedReference from "../../utils/reference";
-import { RequestError } from "../../utils/request";
-import type { CancellationSignal } from "../../utils/task_canceller";
-import TaskCanceller, { CancellationError } from "../../utils/task_canceller";
-import type CoreInterface from "../core_interface/types";
-import type { IContentProtection } from "../decrypt";
-import type IContentDecryptor from "../decrypt";
-import { ContentDecryptorState, getKeySystemConfiguration } from "../decrypt";
-import type { ITextDisplayer } from "../text_displayer";
-import { MainThreadMessageType } from "../types";
-import { canHandleTextTracks } from "../utils/media_capabilities";
-import type { ITextDisplayerOptions } from "./types";
-import { ContentInitializer } from "./types";
-import type { ICorePlaybackObservation } from "./utils/create_core_playback_observer";
-import createCorePlaybackObserver from "./utils/create_core_playback_observer";
-import type { IInitialTimeOptions } from "./utils/get_initial_time";
-import getInitialTime from "./utils/get_initial_time";
-import getLoadedReference from "./utils/get_loaded_reference";
-import performInitialSeekAndPlay from "./utils/initial_seek_and_play";
-import RebufferingController from "./utils/rebuffering_controller";
-import StreamEventsEmitter from "./utils/stream_events_emitter/stream_events_emitter";
-import listenToMediaError from "./utils/throw_on_media_error";
-import { updateManifestCodecSupport } from "./utils/update_manifest_codec_support";
+} from "../../public_types.ts";
+import type { IThumbnailResponse, ITransportOptions } from "../../transports/index.ts";
+import arrayFind from "../../utils/array_find.ts";
+import assert, { assertUnreachable } from "../../utils/assert.ts";
+import idGenerator from "../../utils/id_generator.ts";
+import isNullOrUndefined from "../../utils/is_null_or_undefined.ts";
+import type { IAcceptedLogValue } from "../../utils/logger.ts";
+import objectAssign from "../../utils/object_assign.ts";
+import type { IReadOnlySharedReference } from "../../utils/reference.ts";
+import SharedReference from "../../utils/reference.ts";
+import { RequestError } from "../../utils/request/index.ts";
+import type { CancellationSignal } from "../../utils/task_canceller.ts";
+import TaskCanceller, { CancellationError } from "../../utils/task_canceller.ts";
+import type CoreInterface from "../core_interface/types.ts";
+import type { IContentProtection } from "../decrypt/index.ts";
+import type IContentDecryptor from "../decrypt/index.ts";
+import { ContentDecryptorState, getKeySystemConfiguration } from "../decrypt/index.ts";
+import type { ITextDisplayer } from "../text_displayer/index.ts";
+import { MainThreadMessageType } from "../types.ts";
+import { canHandleTextTracks } from "../utils/media_capabilities.ts";
+import type { ITextDisplayerOptions } from "./types.ts";
+import { ContentInitializer } from "./types.ts";
+import type { ICorePlaybackObservation } from "./utils/create_core_playback_observer.ts";
+import createCorePlaybackObserver from "./utils/create_core_playback_observer.ts";
+import type { IInitialTimeOptions } from "./utils/get_initial_time.ts";
+import getInitialTime from "./utils/get_initial_time.ts";
+import getLoadedReference from "./utils/get_loaded_reference.ts";
+import performInitialSeekAndPlay from "./utils/initial_seek_and_play.ts";
+import RebufferingController from "./utils/rebuffering_controller.ts";
+import StreamEventsEmitter from "./utils/stream_events_emitter/stream_events_emitter.ts";
+import listenToMediaError from "./utils/throw_on_media_error.ts";
+import { updateManifestCodecSupport } from "./utils/update_manifest_codec_support.ts";
 
 const generateContentId = idGenerator();
 
@@ -179,7 +182,7 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
       adaptiveOptions,
       transport,
       transportOptions,
-      useMseInWorker,
+      playbackSupport,
       coreInterface,
     } = this._settings;
     const { wantedBufferAhead, maxVideoBufferSize, maxBufferAhead, maxBufferBehind } =
@@ -195,7 +198,7 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
       initialTime: undefined,
       autoPlay: undefined,
       initialPlayPerformed: null,
-      useMseInWorker,
+      useMseInWorker: playbackSupport.mseInWorker,
     };
     coreInterface.sendMessage({
       type: MainThreadMessageType.PrepareContent,
@@ -204,7 +207,7 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
         cmcd: this._settings.cmcd,
         enableRepresentationAvoidance: this._settings.enableRepresentationAvoidance,
         url: this._settings.url,
-        hasText: canHandleTextTracks(this._settings.textTrackOptions),
+        playbackSupport: this._settings.playbackSupport,
         transport,
         transportOptions,
         initialVideoBitrate,
@@ -214,7 +217,6 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
           lowLatencyMode: this._settings.lowLatencyMode,
         },
         segmentRetryOptions: this._settings.segmentRequestOptions,
-        useMseInWorker,
       },
     });
     this._initCanceller.signal.register(() => {
@@ -954,7 +956,7 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
           const manifest = msgData.value.manifest;
           streamEventsEmitter.start(manifest);
           this._currentContentInfo.manifest = manifest;
-          this._updateCodecSupport(manifest, mediaElement);
+          this._updateCodecSupport(manifest);
           this._startPlaybackIfReady(playbackStartParams);
           break;
         }
@@ -981,7 +983,7 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
             );
           }
           streamEventsEmitter.onManifestUpdate(manifest);
-          this._updateCodecSupport(manifest, mediaElement);
+          this._updateCodecSupport(manifest);
           this.trigger("manifestUpdate", msgData.value.updates);
           break;
         }
@@ -1435,7 +1437,7 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
         if (isNullOrUndefined(manifest)) {
           return;
         }
-        this._updateCodecSupport(manifest, mediaElement);
+        this._updateCodecSupport(manifest);
         contentDecryptor.removeEventListener(
           "stateChange",
           updateCodecSupportOnStateChange,
@@ -1554,12 +1556,12 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
    * status of these codecs, and forwards the list of supported codecs to core.
    * @param manifest
    */
-  private _updateCodecSupport(manifest: IManifestMetadata, mediaElement: IMediaElement) {
+  private _updateCodecSupport(manifest: IManifestMetadata) {
     try {
       const updatedCodecs = updateManifestCodecSupport(
+        this._settings.MediaSourceClass,
         manifest,
         this._currentContentInfo?.contentDecryptor ?? null,
-        mediaElement,
         this._currentContentInfo?.useMseInWorker ?? false,
       );
       if (updatedCodecs.length > 0) {
@@ -1967,9 +1969,7 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
               stopListening();
               const mediaSource = new MainMediaSourceInterface(
                 mediaSourceId,
-                "FORCED_MEDIA_SOURCE" in mediaElement
-                  ? mediaElement.FORCED_MEDIA_SOURCE
-                  : undefined,
+                this._settings.MediaSourceClass,
               );
               if (this._currentContentInfo.mediaSourceInfo?.type === "main") {
                 this._currentContentInfo.mediaSourceInfo.mediaSource.dispose(
@@ -2114,16 +2114,30 @@ export interface IInitializeArguments {
    * which cases message exchanging mechanisms would be different.
    */
   coreInterface: CoreInterface;
-  /**
-   * If `true`, MSE API should be used in the core part of the RxPlayer (in the
-   * WebWorker).
-   * If `false`, they should be relied on on main thread.
-   *
-   * This might depend on both browser capabilities and preferences. It is
-   * assumed that the caller perform all those checks, the `ContentInitializer`
-   * won't check again the validity of this value.
-   */
-  useMseInWorker: boolean;
+  /** The resolved playback support for this content. */
+  playbackSupport: {
+    /**
+     * If `true`, MSE API should be used in the core part of the RxPlayer (in the
+     * WebWorker).
+     * If `false`, they should be relied on on main thread.
+     *
+     * This might depend on both browser capabilities and preferences. It is
+     * assumed that the caller perform all those checks, the `ContentInitializer`
+     * won't check again the validity of this value.
+     */
+    mseInWorker: boolean;
+    /**
+     * If `true`, the right environment **and** features are present to be able
+     * to support text tracks.
+     */
+    textTrack: boolean;
+    /**
+     * If `true`, the right environment **and** features are present to be able
+     * to support video tracks.
+     * This includes a video element tag.
+     */
+    videoTrack: boolean;
+  };
   /** Options concerning the ABR logic. */
   adaptiveOptions: IAdaptiveRepresentationSelectorArguments;
   /** `true` if we should play when loaded. */
@@ -2240,6 +2254,8 @@ export interface IInitializeArguments {
   textTrackOptions: ITextDisplayerOptions;
   /** URL of the Manifest. `undefined` if unknown or not pertinent. */
   url: string | undefined;
+  /** `MediaSource` implementation that is wanted for that content. */
+  MediaSourceClass: IMediaSourceClass;
 }
 
 function bindNumberReferencesToCore(

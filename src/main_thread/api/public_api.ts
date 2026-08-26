@@ -19,35 +19,37 @@
  * It also starts the different sub-parts of the player on various API calls.
  */
 
-import type { IMediaElement } from "../../compat/browser_compatibility_types";
-import canRelyOnVideoVisibilityAndSize from "../../compat/can_rely_on_video_visibility_and_size";
-import type { IPictureInPictureEvent } from "../../compat/event_listeners";
+import BROWSER_GLOBALS, {
+  type IMediaElement,
+} from "../../compat/browser_compatibility_types.ts";
+import canRelyOnVideoVisibilityAndSize from "../../compat/can_rely_on_video_visibility_and_size.ts";
+import type { IPictureInPictureEvent } from "../../compat/event_listeners.ts";
 import {
   getPictureOnPictureStateRef,
   getVideoVisibilityRef,
   getElementResolutionRef,
   getScreenResolutionRef,
-} from "../../compat/event_listeners";
-import getStartDate from "../../compat/get_start_date";
-import hasMseInWorker from "../../compat/has_mse_in_worker";
-import hasWorkerApi from "../../compat/has_worker_api";
-import config from "../../config";
-import type { ISegmentSinkMetrics } from "../../core/segment_sinks/segment_sinks_store";
+} from "../../compat/event_listeners.ts";
+import getStartDate from "../../compat/get_start_date.ts";
+import hasMseInWorker from "../../compat/has_mse_in_worker.ts";
+import hasWorkerApi from "../../compat/has_worker_api.ts";
+import config from "../../config.ts";
+import type { ISegmentSinkMetrics } from "../../core/segment_sinks/segment_sinks_store.ts";
 import type {
   IAdaptationChoice,
   IInbandEvent,
   IABRThrottlers,
   IBufferType,
   ICoreMessage,
-} from "../../core/types";
-import { CoreMessageType } from "../../core/types";
-import type { IDefaultConfig } from "../../default_config";
-import type { IErrorCode, IErrorType } from "../../errors";
-import { ErrorCodes, ErrorTypes, formatError, MediaError } from "../../errors";
-import WorkerInitializationError from "../../errors/worker_initialization_error";
-import type { IFeature } from "../../features";
-import features, { addFeatures } from "../../features";
-import log from "../../log";
+} from "../../core/types.ts";
+import { CoreMessageType } from "../../core/types.ts";
+import type { IDefaultConfig } from "../../default_config.ts";
+import type { IErrorCode, IErrorType } from "../../errors/index.ts";
+import { ErrorCodes, ErrorTypes, formatError, MediaError } from "../../errors/index.ts";
+import WorkerInitializationError from "../../errors/worker_initialization_error.ts";
+import type { IFeature } from "../../features/index.ts";
+import features, { addFeatures } from "../../features/index.ts";
+import log from "../../log.ts";
 import type {
   IDecipherabilityStatusChangedElement,
   IAdaptationMetadata,
@@ -56,7 +58,7 @@ import type {
   IRepresentationMetadata,
   IPeriodsUpdateResult,
   IManifest,
-} from "../../manifest";
+} from "../../manifest/index.ts";
 import {
   getLivePosition,
   getMaximumSafePosition,
@@ -65,9 +67,9 @@ import {
   getPeriodForTime,
   toVideoRepresentation,
   toAudioRepresentation,
-} from "../../manifest";
-import type { IPlaybackObservation } from "../../playback_observer";
-import MediaElementPlaybackObserver from "../../playback_observer/media_element_playback_observer";
+} from "../../manifest/index.ts";
+import type { IPlaybackObservation } from "../../playback_observer/index.ts";
+import MediaElementPlaybackObserver from "../../playback_observer/media_element_playback_observer.ts";
 import type {
   IAudioRepresentation,
   IAudioRepresentationsSwitchingMode,
@@ -105,48 +107,51 @@ import type {
   IThumbnailTrackInfo,
   IThumbnailRenderingOptions,
   INoPlayableTrackEventPayload,
-} from "../../public_types";
-import type { IThumbnailResponse } from "../../transports";
-import arrayFind from "../../utils/array_find";
-import arrayIncludes from "../../utils/array_includes";
-import assert, { assertUnreachable } from "../../utils/assert";
-import type { IEventPayload, IListener } from "../../utils/event_emitter";
-import EventEmitter from "../../utils/event_emitter";
-import globalScope from "../../utils/global_scope";
-import idGenerator from "../../utils/id_generator";
-import isNullOrUndefined from "../../utils/is_null_or_undefined";
-import type Logger from "../../utils/logger";
-import getMonotonicTimeStamp from "../../utils/monotonic_timestamp";
-import objectAssign from "../../utils/object_assign";
-import { getLeftSizeOfBufferedTimeRange } from "../../utils/ranges";
-import type { IReadOnlySharedReference } from "../../utils/reference";
-import SharedReference, { createMappedReference } from "../../utils/reference";
-import type { CancellationSignal } from "../../utils/task_canceller";
-import TaskCanceller from "../../utils/task_canceller";
+} from "../../public_types.ts";
+import type { IThumbnailResponse } from "../../transports/index.ts";
+import arrayFind from "../../utils/array_find.ts";
+import arrayIncludes from "../../utils/array_includes.ts";
+import assert, { assertUnreachable } from "../../utils/assert.ts";
+import type { IEventPayload, IListener } from "../../utils/event_emitter.ts";
+import EventEmitter from "../../utils/event_emitter.ts";
+import globalScope from "../../utils/global_scope.ts";
+import idGenerator from "../../utils/id_generator.ts";
+import isNullOrUndefined from "../../utils/is_null_or_undefined.ts";
+import type Logger from "../../utils/logger.ts";
+import getMonotonicTimeStamp from "../../utils/monotonic_timestamp.ts";
+import objectAssign from "../../utils/object_assign.ts";
+import { getLeftSizeOfBufferedTimeRange } from "../../utils/ranges.ts";
+import type { IReadOnlySharedReference } from "../../utils/reference.ts";
+import SharedReference, { createMappedReference } from "../../utils/reference.ts";
+import type { CancellationSignal } from "../../utils/task_canceller.ts";
+import TaskCanceller from "../../utils/task_canceller.ts";
 import {
   clearOnStop,
   disposeDecryptionResources,
   getKeySystemConfiguration,
-} from "../decrypt";
-import type { ContentInitializer } from "../init";
-import renderThumbnail from "../render_thumbnail";
-import type { IMediaElementTracksStore, ITSPeriodObject } from "../tracks_store";
-import TracksStore from "../tracks_store";
-import { MainThreadMessageType } from "../types";
-import { canHandleTextTracks, canHandleVideoTracks } from "../utils/media_capabilities";
-import type { IParsedLoadVideoOptions, IParsedStartAtOption } from "./option_utils";
+} from "../decrypt/index.ts";
+import type { ContentInitializer } from "../init/index.ts";
+import renderThumbnail from "../render_thumbnail.ts";
+import type { IMediaElementTracksStore, ITSPeriodObject } from "../tracks_store/index.ts";
+import TracksStore from "../tracks_store/index.ts";
+import { MainThreadMessageType } from "../types.ts";
+import {
+  canHandleTextTracks,
+  canHandleVideoTracks,
+} from "../utils/media_capabilities.ts";
+import type { IParsedLoadVideoOptions, IParsedStartAtOption } from "./option_utils.ts";
 import {
   checkReloadOptions,
   parseConstructorOptions,
   parseLoadVideoOptions,
-} from "./option_utils";
+} from "./option_utils.ts";
 import {
   constructPlayerStateReference,
   emitPlayPauseEvents,
   emitSeekEvents,
   isLoadedState,
   PLAYER_STATES,
-} from "./utils";
+} from "./utils.ts";
 
 /* eslint-disable @typescript-eslint/naming-convention */
 
@@ -439,7 +444,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     // See: https://bugzilla.mozilla.org/show_bug.cgi?id=1194624
     videoElement.preload = "auto";
 
-    this.version = /* PLAYER_VERSION */ "4.4.1";
+    this.version = /* PLAYER_VERSION */ "4.5.0";
     this.log = log;
     this.state = "STOPPED";
     this.videoElement = videoElement;
@@ -645,7 +650,6 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           sendBackLogs: isDebugModeEnabled,
           date: Date.now(),
           timestamp: getMonotonicTimeStamp(),
-          hasVideo: canHandleVideoTracks(this.videoElement),
         },
       });
       log.addEventListener(
@@ -1029,6 +1033,9 @@ class Player extends EventEmitter<IPublicAPIEvent> {
 
     const isDirectFile = transport === "directfile";
 
+    const isTextHandled = canHandleTextTracks(options);
+    const isVideoHandled = canHandleVideoTracks(this.videoElement);
+
     /** Emit to stop the current content. */
     const currentContentCanceller = new TaskCanceller("API current content");
 
@@ -1039,6 +1046,12 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     let useWorker = false;
     let mediaElementTracksStore: IMediaElementTracksStore | null = null;
     if (!isDirectFile) {
+      const MediaSourceClass =
+        this.videoElement.FORCED_MEDIA_SOURCE ?? BROWSER_GLOBALS.MediaSource_;
+      if (MediaSourceClass === undefined) {
+        throw new Error("Cannot load video: No MediaSource instance available currently");
+      }
+
       /** Interface used to load and refresh the Manifest. */
       const manifestRequestSettings = {
         lowLatencyMode,
@@ -1193,7 +1206,6 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           type: MainThreadMessageType.Init,
           value: {
             dashWasmUrl: undefined,
-            hasVideo: canHandleVideoTracks(this.videoElement),
             logLevel: log.getLevel(),
             logFormat: log.getFormat(),
             sendBackLogs: false,
@@ -1219,7 +1231,12 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           startAt,
           textTrackOptions,
           url,
-          useMseInWorker: false,
+          playbackSupport: {
+            mseInWorker: false,
+            videoTrack: isVideoHandled,
+            textTrack: isTextHandled,
+          },
+          MediaSourceClass,
         });
       } else {
         if (features.multithread === null) {
@@ -1299,7 +1316,12 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           startAt,
           textTrackOptions,
           url,
-          useMseInWorker: hasMseInWorker,
+          MediaSourceClass,
+          playbackSupport: {
+            mseInWorker: hasMseInWorker,
+            videoTrack: isVideoHandled,
+            textTrack: isTextHandled,
+          },
         });
       }
     } else {
@@ -1360,8 +1382,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
       mediaElementTracksStore,
       handledTrackTypes: {
         audio: true,
-        video: canHandleVideoTracks(this.videoElement),
-        text: canHandleTextTracks(options),
+        video: isVideoHandled,
+        text: isTextHandled,
       },
       useWorker,
       segmentSinkMetricsCallback: null,
@@ -3845,7 +3867,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     return true;
   }
 }
-Player.version = /* PLAYER_VERSION */ "4.4.1";
+Player.version = /* PLAYER_VERSION */ "4.5.0";
 
 /** Every events sent by the RxPlayer's public API. */
 interface IPublicAPIEvent {

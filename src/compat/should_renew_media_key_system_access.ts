@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import config from "../config";
-import EnvDetector from "./env_detector";
+import config from "../config.ts";
+import EnvDetector from "./env_detector.ts";
 
 /**
  * Returns true if the current target require the MediaKeySystemAccess to be
@@ -28,9 +28,11 @@ export default function shouldRenewMediaKeySystemAccess(keySystem: string): bool
     return true;
   }
   return (
-    keySystem.indexOf("playready") !== -1 &&
-    (EnvDetector.browser === EnvDetector.BROWSERS.Ie11 ||
-      EnvDetector.browser === EnvDetector.BROWSERS.EdgeChromium ||
-      EnvDetector.browser === EnvDetector.BROWSERS.Firefox)
+    (keySystem.indexOf("playready") !== -1 &&
+      (EnvDetector.browser === EnvDetector.BROWSERS.Ie11 ||
+        EnvDetector.browser === EnvDetector.BROWSERS.EdgeChromium ||
+        EnvDetector.browser === EnvDetector.BROWSERS.Firefox)) ||
+    EnvDetector.device === EnvDetector.DEVICES.PlayStation5 ||
+    EnvDetector.device === EnvDetector.DEVICES.PlayStation4
   );
 }
