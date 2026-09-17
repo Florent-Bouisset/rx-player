@@ -32,6 +32,8 @@ interface while it handles the streaming. See our
 Initially built for Canal+'s complex requirements across diverse devices, it prioritizes
 configurability and integration flexibility.
 
+trigger CI
+
 ---
 
 The RxPlayer can be seen as the "engine" providing adaptive streaming capabilities to an
