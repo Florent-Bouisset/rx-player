@@ -14,27 +14,30 @@
  * limitations under the License.
  */
 
-import noop from "../../../../../../utils/noop";
+import noop from "../../../../../../utils/noop.ts";
 import type {
   IEventStreamIntermediateRepresentation,
   IPeriodAttributes,
   IPeriodChildren,
-} from "../../../node_parser_types";
-import type { IAttributeParser, IChildrenParser } from "../parsers_stack";
-import type ParsersStack from "../parsers_stack";
-import { AttributeName, TagName } from "../types";
-import { parseString } from "../utils";
+} from "../../../node_parser_types.ts";
+import type { IAttributeParser, IChildrenParser } from "../parsers_stack.ts";
+import type ParsersStack from "../parsers_stack.ts";
+import { AttributeName, TagName } from "../types.ts";
+import { parseString } from "../utils.ts";
 import {
   generateAdaptationSetAttrParser,
   generateAdaptationSetChildrenParser,
-} from "./AdaptationSet";
-import { generateBaseUrlAttrParser } from "./BaseURL";
-import { generateContentProtectionAttrParser } from "./ContentProtection";
+} from "./AdaptationSet.ts";
+import { generateBaseUrlAttrParser } from "./BaseURL.ts";
+import { generateContentProtectionAttrParser } from "./ContentProtection.ts";
 import {
   generateEventStreamAttrParser,
   generateEventStreamChildrenParser,
-} from "./EventStream";
-import { generateSegmentTemplateAttrParser } from "./SegmentTemplate";
+} from "./EventStream.ts";
+import {
+  generateSegmentTemplateAttrParser,
+  generateSegmentTemplateChildrenParser,
+} from "./SegmentTemplate.ts";
 
 /**
  * Generate a "children parser" once inside a `Perod` node.
@@ -54,10 +57,24 @@ export function generatePeriodChildrenParser(
     switch (nodeId) {
       case TagName.AdaptationSet: {
         const adaptationObj = {
-          children: { baseURLs: [], representations: [] },
+          children: {
+            BaseURL: [],
+            Representation: [],
+            Accessibility: [],
+            ContentComponent: [],
+            ContentProtection: [],
+            EssentialProperty: [],
+            InbandEventStream: [],
+            Role: [],
+            SupplementalProperty: [],
+            SegmentBase: [],
+            SegmentList: [],
+            SegmentTemplate: [],
+            Label: [],
+          },
           attributes: {},
         };
-        periodChildren.adaptations.push(adaptationObj);
+        periodChildren.AdaptationSet.push(adaptationObj);
         const childrenParser = generateAdaptationSetChildrenParser(
           adaptationObj.children,
           linearMemory,
@@ -73,7 +90,7 @@ export function generatePeriodChildrenParser(
 
       case TagName.BaseURL: {
         const baseUrl = { value: "", attributes: {} };
-        periodChildren.baseURLs.push(baseUrl);
+        periodChildren.BaseURL.push(baseUrl);
         const childrenParser = noop;
         const attributeParser = generateBaseUrlAttrParser(baseUrl, linearMemory);
         parsersStack.pushParsers(nodeId, childrenParser, attributeParser);
@@ -82,10 +99,10 @@ export function generatePeriodChildrenParser(
 
       case TagName.EventStream: {
         const eventStream: IEventStreamIntermediateRepresentation = {
-          children: { events: [] },
+          children: { Event: [] },
           attributes: {},
         };
-        periodChildren.eventStreams.push(eventStream);
+        periodChildren.EventStream.push(eventStream);
         const childrenParser = generateEventStreamChildrenParser(
           eventStream.children,
           linearMemory,
@@ -101,11 +118,15 @@ export function generatePeriodChildrenParser(
       }
 
       case TagName.SegmentTemplate: {
-        const stObj = {};
-        periodChildren.segmentTemplate = stObj;
+        const stObj = { children: { Initialization: [] }, attributes: {} };
+        periodChildren.SegmentTemplate.push(stObj);
         parsersStack.pushParsers(
           nodeId,
-          noop, // SegmentTimeline as treated like an attribute
+          generateSegmentTemplateChildrenParser(
+            stObj.children,
+            linearMemory,
+            parsersStack,
+          ),
           generateSegmentTemplateAttrParser(stObj, linearMemory),
         );
         break;
@@ -113,13 +134,10 @@ export function generatePeriodChildrenParser(
 
       case TagName.ContentProtection: {
         const contentProtection = {
-          children: { cencPssh: [] },
+          children: { ["cenc:pssh"]: [] },
           attributes: {},
         };
-        if (periodChildren.contentProtections === undefined) {
-          periodChildren.contentProtections = [];
-        }
-        periodChildren.contentProtections.push(contentProtection);
+        periodChildren.ContentProtection.push(contentProtection);
         const contentProtAttrParser = generateContentProtectionAttrParser(
           contentProtection,
           linearMemory,
@@ -160,13 +178,18 @@ export function generatePeriodAttrParser(
         break;
       case AttributeName.BitstreamSwitching:
         periodAttrs.bitstreamSwitching =
-          new DataView(linearMemory.buffer).getUint8(0) === 0;
+          new DataView(linearMemory.buffer).getUint8(ptr) !== 0;
         break;
       case AttributeName.XLinkHref:
-        periodAttrs.xlinkHref = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        periodAttrs["xlink:href"] = parseString(
+          textDecoder,
+          linearMemory.buffer,
+          ptr,
+          len,
+        );
         break;
       case AttributeName.XLinkActuate:
-        periodAttrs.xlinkActuate = parseString(
+        periodAttrs["xlink:actuate"] = parseString(
           textDecoder,
           linearMemory.buffer,
           ptr,
@@ -181,7 +204,7 @@ export function generatePeriodAttrParser(
         break;
       case AttributeName.AvailabilityTimeComplete:
         periodAttrs.availabilityTimeComplete =
-          new DataView(linearMemory.buffer).getUint8(0) === 0;
+          new DataView(linearMemory.buffer).getUint8(ptr) !== 0;
         break;
       case AttributeName.Namespace: {
         const xmlNs = { key: "", value: "" };

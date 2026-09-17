@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import noop from "../../../../../../utils/noop";
+import noop from "../../../../../../utils/noop.ts";
 import type {
   IEventStreamAttributes,
   IEventStreamChildren,
   IEventStreamEventIntermediateRepresentation,
-} from "../../../node_parser_types";
-import type { IAttributeParser, IChildrenParser } from "../parsers_stack";
-import type ParsersStack from "../parsers_stack";
-import { AttributeName, TagName } from "../types";
-import { parseString } from "../utils";
+} from "../../../node_parser_types.ts";
+import type { IAttributeParser, IChildrenParser } from "../parsers_stack.ts";
+import type ParsersStack from "../parsers_stack.ts";
+import { AttributeName, TagName } from "../types.ts";
+import { parseString } from "../utils.ts";
 
 /**
  * Generate a "children parser" once inside a `EventStream` node.
@@ -43,7 +43,7 @@ export function generateEventStreamChildrenParser(
     switch (nodeId) {
       case TagName.EventStreamElt: {
         const event = {};
-        childrenObj.events.push(event);
+        childrenObj.Event.push(event);
         const attrParser = generateEventAttrParser(event, linearMemory, fullMpd);
         parsersStack.pushParsers(nodeId, noop, attrParser);
         break;

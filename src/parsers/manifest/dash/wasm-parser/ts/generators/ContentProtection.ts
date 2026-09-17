@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { base64ToBytes } from "../../../../../../utils/base64";
-import { hexToBytes } from "../../../../../../utils/string_parsing";
-import type { IContentProtectionIntermediateRepresentation } from "../../../node_parser_types";
-import type { IAttributeParser } from "../parsers_stack";
-import { AttributeName } from "../types";
-import { parseString } from "../utils";
+import { base64ToBytes } from "../../../../../../utils/base64.ts";
+import { hexToBytes } from "../../../../../../utils/string_parsing.ts";
+import type { IContentProtectionIntermediateRepresentation } from "../../../node_parser_types.ts";
+import type { IAttributeParser } from "../parsers_stack.ts";
+import { AttributeName } from "../types.ts";
+import { parseString } from "../utils.ts";
 
 /**
  * @param {Object} cp
@@ -43,13 +43,13 @@ export function generateContentProtectionAttrParser(
         break;
       case AttributeName.ContentProtectionKeyId: {
         const kid = parseString(textDecoder, linearMemory.buffer, ptr, len);
-        cpAttrs.keyId = hexToBytes(kid.replace(/-/g, ""));
+        cpAttrs["cenc:default_KID"] = hexToBytes(kid.replace(/-/g, ""));
         break;
       }
       case AttributeName.ContentProtectionCencPSSH:
         try {
           const b64 = parseString(textDecoder, linearMemory.buffer, ptr, len);
-          cpChildren.cencPssh.push(base64ToBytes(b64));
+          cpChildren["cenc:pssh"].push({ value: base64ToBytes(b64) });
         } catch (_) {
           /* TODO log error? register as warning? */
         }

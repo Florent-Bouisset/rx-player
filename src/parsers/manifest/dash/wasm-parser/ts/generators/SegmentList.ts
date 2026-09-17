@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import noop from "../../../../../../utils/noop";
-import type { ISegmentListIntermediateRepresentation } from "../../../node_parser_types";
-import type { IChildrenParser } from "../parsers_stack";
-import type ParsersStack from "../parsers_stack";
-import { TagName } from "../types";
-import { generateSegmentUrlAttrParser } from "./SegmentUrl";
+import noop from "../../../../../../utils/noop.ts";
+import type { ISegmentListIntermediateRepresentation } from "../../../node_parser_types.ts";
+import type { IChildrenParser } from "../parsers_stack.ts";
+import type ParsersStack from "../parsers_stack.ts";
+import { TagName } from "../types.ts";
+import generateInitializationAttrParser from "./Initialization.ts";
+import { generateSegmentUrlAttrParser } from "./SegmentUrl.ts";
 
 /**
  * Generate a "children parser" once inside a `SegmentList` node.
@@ -35,12 +36,20 @@ export function generateSegmentListChildrenParser(
 ): IChildrenParser {
   return function onRootChildren(nodeId: number) {
     switch (nodeId) {
+      case TagName.Initialization: {
+        const initialization = { attributes: {} };
+        segListChildren.children.Initialization.push(initialization);
+        parsersStack.pushParsers(
+          nodeId,
+          noop,
+          generateInitializationAttrParser(initialization, linearMemory),
+        );
+        break;
+      }
+
       case TagName.SegmentUrl: {
-        const segmentObj = {};
-        if (segListChildren.list === undefined) {
-          segListChildren.list = [];
-        }
-        segListChildren.list.push(segmentObj);
+        const segmentObj = { attributes: {} };
+        segListChildren.children.SegmentURL.push(segmentObj);
         const attrParser = generateSegmentUrlAttrParser(segmentObj, linearMemory);
         parsersStack.pushParsers(nodeId, noop, attrParser);
         break;

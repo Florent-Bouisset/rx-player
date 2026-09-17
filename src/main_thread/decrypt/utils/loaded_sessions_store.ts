@@ -17,13 +17,17 @@
 import type {
   IMediaKeySession,
   IMediaKeys,
-} from "../../../compat/browser_compatibility_types";
-import { closeSession, generateKeyRequest, loadSession } from "../../../compat/eme";
-import log from "../../../log";
-import assert from "../../../utils/assert";
-import isNullOrUndefined from "../../../utils/is_null_or_undefined";
-import type { IProcessedProtectionData } from "../types";
-import KeySessionRecord from "./key_session_record";
+} from "../../../compat/browser_compatibility_types.ts";
+import {
+  closeSession,
+  generateKeyRequest,
+  loadSession,
+} from "../../../compat/eme/index.ts";
+import log from "../../../log.ts";
+import assert from "../../../utils/assert.ts";
+import isNullOrUndefined from "../../../utils/is_null_or_undefined.ts";
+import type { IProcessedProtectionData } from "../types.ts";
+import KeySessionRecord from "./key_session_record.ts";
 
 /**
  * Create and store MediaKeySessions linked to a single MediaKeys
@@ -470,7 +474,8 @@ export interface IStoredSessionEntry {
    * type of interaction while a close operation is either pending or is
    * awaited.
    */
-  closingStatus: /** Status when the MediaKeySession is currently being closed. */
+  closingStatus:
+    /** Status when the MediaKeySession is currently being closed. */
     | { type: "pending" }
     /** Status when the MediaKeySession has been closed. */
     | { type: "done" }

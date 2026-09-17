@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import log from "../../log";
-import isNonEmptyString from "../is_non_empty_string";
-import isNullOrUndefined from "../is_null_or_undefined";
-import getMonotonicTimeStamp from "../monotonic_timestamp";
-import type { CancellationError, CancellationSignal } from "../task_canceller";
-import RequestError, { RequestErrorTypes } from "./request_error";
+import log from "../../log.ts";
+import isNonEmptyString from "../is_non_empty_string.ts";
+import isNullOrUndefined from "../is_null_or_undefined.ts";
+import getMonotonicTimeStamp from "../monotonic_timestamp.ts";
+import type { CancellationError, CancellationSignal } from "../task_canceller.ts";
+import RequestError, { RequestErrorTypes } from "./request_error.ts";
 
 const DEFAULT_RESPONSE_TYPE: XMLHttpRequestResponseType = "json";
 
@@ -206,7 +206,15 @@ export default function request<T>(
             responseData,
           });
         } else {
-          reject(new RequestError(url, xhr.status, RequestErrorTypes.ERROR_HTTP_CODE));
+          const retryAfter = xhr.getResponseHeader("Retry-After");
+          reject(
+            new RequestError(
+              url,
+              xhr.status,
+              RequestErrorTypes.ERROR_HTTP_CODE,
+              retryAfter === null ? undefined : { retryAfter },
+            ),
+          );
         }
       }
     };

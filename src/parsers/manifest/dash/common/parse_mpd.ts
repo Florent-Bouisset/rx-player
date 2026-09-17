@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-import config from "../../../../config";
-import log from "../../../../log";
-import type { IManifest } from "../../../../manifest";
-import arrayFind from "../../../../utils/array_find";
-import isNullOrUndefined from "../../../../utils/is_null_or_undefined";
-import getMonotonicTimeStamp from "../../../../utils/monotonic_timestamp";
-import { getFilenameIndexInUrl } from "../../../../utils/url-utils";
-import type { IParsedManifest } from "../../types";
+import config from "../../../../config.ts";
+import log from "../../../../log.ts";
+import type { IManifest } from "../../../../manifest/index.ts";
+import arrayFind from "../../../../utils/array_find.ts";
+import isNullOrUndefined from "../../../../utils/is_null_or_undefined.ts";
+import getMonotonicTimeStamp from "../../../../utils/monotonic_timestamp.ts";
+import { getFilenameIndexInUrl } from "../../../../utils/url-utils.ts";
+import type { IParsedManifest } from "../../types.ts";
 import type {
   IMPDIntermediateRepresentation,
   IPeriodIntermediateRepresentation,
-} from "../node_parser_types";
-import type { IResponseData } from "../parsers_types";
-import ContentProtectionParser from "./content_protection_parser";
-import getClockOffset from "./get_clock_offset";
-import getHTTPUTCTimingURL from "./get_http_utc-timing_url";
-import getMinimumAndMaximumPositions from "./get_minimum_and_maximum_positions";
-import ManifestBoundsCalculator from "./manifest_bounds_calculator";
-import parseAvailabilityStartTime from "./parse_availability_start_time";
-import type { IXLinkInfos } from "./parse_periods";
-import parsePeriods from "./parse_periods";
-import type { IResolvedBaseUrl } from "./resolve_base_urls";
-import resolveBaseURLs from "./resolve_base_urls";
+} from "../node_parser_types.ts";
+import type { IResponseData } from "../parsers_types.ts";
+import ContentProtectionParser from "./content_protection_parser.ts";
+import getClockOffset from "./get_clock_offset.ts";
+import getHTTPUTCTimingURL from "./get_http_utc-timing_url.ts";
+import getMinimumAndMaximumPositions from "./get_minimum_and_maximum_positions.ts";
+import ManifestBoundsCalculator from "./manifest_bounds_calculator.ts";
+import parseAvailabilityStartTime from "./parse_availability_start_time.ts";
+import type { IXLinkInfos } from "./parse_periods.ts";
+import parsePeriods from "./parse_periods.ts";
+import type { IResolvedBaseUrl } from "./resolve_base_urls.ts";
+import resolveBaseURLs from "./resolve_base_urls.ts";
 
 /** Possible options for `parseMPD`.  */
 export interface IMPDParserArguments {
@@ -112,9 +112,7 @@ export interface IIrParserResponseDone {
 }
 
 export type IIrParserResponse =
-  | IIrParserResponseNeedsClock
-  | IIrParserResponseNeedsXlinks
-  | IIrParserResponseDone;
+  IIrParserResponseNeedsClock | IIrParserResponseNeedsXlinks | IIrParserResponseDone;
 
 /**
  * Checks if xlinks needs to be loaded before actually parsing the manifest.
@@ -135,16 +133,17 @@ export default function parseMpdIr(
   if (isNullOrUndefined(args.externalClockOffset)) {
     const isDynamic: boolean = rootAttributes.type === "dynamic";
 
-    const directTiming = arrayFind(rootChildren.utcTimings, (utcTiming) => {
+    const directTiming = arrayFind(rootChildren.UTCTiming, (utcTiming) => {
       return (
-        utcTiming.schemeIdUri === "urn:mpeg:dash:utc:direct:2014" &&
-        !isNullOrUndefined(utcTiming.value)
+        utcTiming.attributes.schemeIdUri === "urn:mpeg:dash:utc:direct:2014" &&
+        !isNullOrUndefined(utcTiming.attributes.value)
       );
     });
 
     const clockOffsetFromDirectUTCTiming =
-      !isNullOrUndefined(directTiming) && !isNullOrUndefined(directTiming.value)
-        ? getClockOffset(directTiming.value)
+      !isNullOrUndefined(directTiming) &&
+      !isNullOrUndefined(directTiming.attributes.value)
+        ? getClockOffset(directTiming.attributes.value)
         : undefined;
     const clockOffset =
       !isNullOrUndefined(clockOffsetFromDirectUTCTiming) &&
@@ -184,8 +183,9 @@ export default function parseMpdIr(
   }
 
   const xlinksToLoad: Array<{ index: number; ressource: string }> = [];
-  for (let i = 0; i < rootChildren.periods.length; i++) {
-    const { xlinkHref, xlinkActuate } = rootChildren.periods[i].attributes;
+  for (let i = 0; i < rootChildren.Period.length; i++) {
+    const xlinkHref = rootChildren.Period[i].attributes["xlink:href"];
+    const xlinkActuate = rootChildren.Period[i].attributes["xlink:actuate"];
     if (!isNullOrUndefined(xlinkHref) && xlinkActuate === "onLoad") {
       xlinksToLoad.push({ index: i, ressource: xlinkHref });
     }
@@ -225,7 +225,7 @@ export default function parseMpdIr(
           }
 
           // replace original "xlinked" periods by the real deal
-          rootChildren.periods.splice(index, 1, ...periodsIR);
+          rootChildren.Period.splice(index, 1, ...periodsIR);
         }
         return parseMpdIr(mpdIR, args, warnings, hasLoadedClock, xlinkInfos);
       },
@@ -253,7 +253,7 @@ function parseCompleteIntermediateRepresentation(
     args.url !== undefined
       ? [{ url: args.url.substring(0, getFilenameIndexInUrl(args.url)) }]
       : [];
-  const mpdBaseUrls = resolveBaseURLs(initialBaseUrl, rootChildren.baseURLs);
+  const mpdBaseUrls = resolveBaseURLs(initialBaseUrl, rootChildren.BaseURL);
   const availabilityStartTime = parseAvailabilityStartTime(
     rootAttributes,
     args.referenceDateTime,
@@ -270,13 +270,13 @@ function parseCompleteIntermediateRepresentation(
     serverTimestampOffset: externalClockOffset,
   });
   const contentProtectionParser = new ContentProtectionParser();
-  contentProtectionParser.addReferences(rootChildren.contentProtections ?? []);
+  contentProtectionParser.addReferences(rootChildren.ContentProtection);
   const manifestInfos = {
     availabilityStartTime,
     baseURLs: mpdBaseUrls,
     clockOffset,
     contentProtectionParser,
-    duration: rootAttributes.duration,
+    duration: rootAttributes.mediaPresentationDuration,
     isDynamic,
     manifestBoundsCalculator,
     manifestProfiles: mpdIR.attributes.profiles,
@@ -285,9 +285,9 @@ function parseCompleteIntermediateRepresentation(
     xlinkInfos,
     xmlNamespaces: mpdIR.attributes.namespaces,
   };
-  const parsedPeriods = parsePeriods(rootChildren.periods, manifestInfos);
+  const parsedPeriods = parsePeriods(rootChildren.Period, manifestInfos);
   contentProtectionParser.finalize();
-  const mediaPresentationDuration = rootAttributes.duration;
+  const mediaPresentationDuration = rootAttributes.mediaPresentationDuration;
 
   let lifetime: number | undefined;
   let minimumTime: number | undefined;
@@ -416,7 +416,7 @@ function parseCompleteIntermediateRepresentation(
     !isDynamic ||
     (mpdIR.attributes.minimumUpdatePeriod === undefined &&
       (parsedPeriods[parsedPeriods.length - 1]?.end !== undefined ||
-        mpdIR.attributes.duration !== undefined));
+        mpdIR.attributes.mediaPresentationDuration !== undefined));
 
   const parsedMPD: IParsedManifest = {
     availabilityStartTime,
@@ -435,8 +435,8 @@ function parseCompleteIntermediateRepresentation(
     },
     lifetime,
     uris: isNullOrUndefined(args.url)
-      ? rootChildren.locations
-      : [args.url, ...rootChildren.locations],
+      ? rootChildren.Location.map((l) => l.value)
+      : [args.url, ...rootChildren.Location.map((l) => l.value)],
   };
 
   return { type: "done", value: { parsed: parsedMPD, warnings } };

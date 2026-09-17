@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-import log from "../../../../../log";
-import type { IRepresentationIndex, ISegment } from "../../../../../manifest";
-import type { ISegmentInformation } from "../../../../../transports";
-import isNullOrUndefined from "../../../../../utils/is_null_or_undefined";
-import type { IEMSG } from "../../../../containers/isobmff";
-import type { IIndexSegment } from "../../../utils/index_helpers";
+import log from "../../../../../log.ts";
+import type { IRepresentationIndex, ISegment } from "../../../../../manifest/index.ts";
+import type { ISegmentInformation } from "../../../../../transports/index.ts";
+import isNullOrUndefined from "../../../../../utils/is_null_or_undefined.ts";
+import type { IEMSG } from "../../../../containers/isobmff/index.ts";
+import type { IIndexSegment } from "../../../utils/index_helpers.ts";
 import {
   fromIndexTime,
   getIndexSegmentEnd,
   toIndexTime,
-} from "../../../utils/index_helpers";
-import type ManifestBoundsCalculator from "../manifest_bounds_calculator";
-import getInitSegment from "./get_init_segment";
-import getSegmentsFromTimeline from "./get_segments_from_timeline";
-import { constructRepresentationUrl } from "./tokens";
+} from "../../../utils/index_helpers.ts";
+import type ManifestBoundsCalculator from "../manifest_bounds_calculator.ts";
+import getInitSegment from "./get_init_segment.ts";
+import getSegmentsFromTimeline from "./get_segments_from_timeline.ts";
+import { constructRepresentationUrl } from "./tokens.ts";
 
 /**
  * Index property defined for a SegmentBase RepresentationIndex
@@ -51,18 +51,19 @@ export interface IBaseIndex {
    * ```
    */
   indexTimeOffset: number;
-  /** Information on the initialization segment. */
-  initialization:
-    | {
-        /**
-         * URL path, to add to the wanted CDN, to access the initialization segment.
-         * `null` if no URL exists.
-         */
-        url: string | null;
-        /** possible byte range to request it. */
-        range?: [number, number] | undefined;
-      }
-    | undefined;
+  /**
+   * Information on the initialization segment.
+   * `null` if this index has no initialization segment.
+   */
+  initialization: {
+    /**
+     * URL path, to add to the wanted CDN, to access the initialization segment.
+     * `null` if no URL exists.
+     */
+    url: string | null;
+    /** possible byte range to request it. */
+    range?: [number, number] | undefined;
+  } | null;
   /**
    * URL base to access any segment.
    * Can contain token to replace to convert it to real URLs.
@@ -92,7 +93,7 @@ export interface IBaseIndexIndexArgument {
   timescale?: number;
   media?: string;
   indexRange?: [number, number];
-  initialization?: { media?: string; range?: [number, number] };
+  initialization?: { media?: string; range?: [number, number] } | undefined;
   startNumber?: number;
   endNumber?: number;
   /**
@@ -257,10 +258,11 @@ export default class BaseRepresentationIndex implements IRepresentationIndex {
   }
 
   /**
-   * Construct init Segment.
-   * @returns {Object}
+   * Construct the metadata object for the init Segment linked to that index.
+   * Returns `null` if no initialization segment appears to be linked to that index.
+   * @returns {Object|null}
    */
-  getInitSegment(): ISegment {
+  getInitSegment(): ISegment | null {
     return getInitSegment(this._index, this._isEMSGWhitelisted);
   }
 

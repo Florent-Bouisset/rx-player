@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import log from "../../../../../log";
-import type { IRepresentationIndex, ISegment } from "../../../../../manifest";
-import isNullOrUndefined from "../../../../../utils/is_null_or_undefined";
-import type { IEMSG } from "../../../../containers/isobmff";
-import { getTimescaledRange } from "../../../utils/index_helpers";
-import getInitSegment from "./get_init_segment";
-import { constructRepresentationUrl } from "./tokens";
+import log from "../../../../../log.ts";
+import type { IRepresentationIndex, ISegment } from "../../../../../manifest/index.ts";
+import isNullOrUndefined from "../../../../../utils/is_null_or_undefined.ts";
+import type { IEMSG } from "../../../../containers/isobmff/index.ts";
+import { getTimescaledRange } from "../../../utils/index_helpers.ts";
+import getInitSegment from "./get_init_segment.ts";
+import { constructRepresentationUrl } from "./tokens.ts";
 
 /**
  * Index property defined for a SegmentList RepresentationIndex
@@ -48,18 +48,19 @@ export interface IListIndex {
    * ```
    */
   indexTimeOffset: number;
-  /** Information on the initialization segment. */
-  initialization?:
-    | {
-        /**
-         * URL path, to add to the wanted CDN, to access the initialization segment.
-         * `null` if no URL exists.
-         */
-        url: string | null;
-        /** possible byte range to request it. */
-        range?: [number, number] | undefined;
-      }
-    | undefined;
+  /**
+   * Information on the initialization segment.
+   * `null` if this index has no initialization segment.
+   */
+  initialization: {
+    /**
+     * URL path, to add to the wanted CDN, to access the initialization segment.
+     * `null` if no URL exists.
+     */
+    url: string | null;
+    /** possible byte range to request it. */
+    range?: [number, number] | undefined;
+  } | null;
   /** Information on the list of segments for this index. */
   list: Array<{
     /**
@@ -85,10 +86,12 @@ export interface IListIndex {
 export interface IListIndexIndexArgument {
   duration?: number | undefined;
   indexRange?: [number, number] | undefined;
-  initialization?: {
-    media?: string | undefined;
-    range?: [number, number] | undefined;
-  };
+  initialization?:
+    | {
+        media?: string | undefined;
+        range?: [number, number] | undefined;
+      }
+    | undefined;
   list: Array<{
     media?: string | undefined;
     mediaRange?: [number, number] | undefined;
@@ -184,17 +187,21 @@ export default class ListRepresentationIndex implements IRepresentationIndex {
       indexTimeOffset,
       indexRange: index.indexRange,
       initialization: isNullOrUndefined(index.initialization)
-        ? undefined
+        ? null
         : { url: initializationUrl, range: index.initialization.range },
     };
   }
 
   /**
-   * Construct init Segment.
-   * @returns {Object}
+   * Construct the metadata object for the init Segment linked to that index.
+   * Returns `null` if no initialization segment appears to be linked to that index.
+   * @returns {Object|null}
    */
-  getInitSegment(): ISegment {
+  getInitSegment(): ISegment | null {
     const initSegment = getInitSegment(this._index);
+    if (initSegment === null) {
+      return null;
+    }
     if (initSegment.privateInfos === undefined) {
       initSegment.privateInfos = {};
     }

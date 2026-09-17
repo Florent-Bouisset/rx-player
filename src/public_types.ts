@@ -3,18 +3,23 @@
  * Those types are considered as part of the API.
  */
 
-import type { IPreferredEmeApiType } from "./compat/eme";
-import type { EncryptedMediaError, MediaError, NetworkError, OtherError } from "./errors";
+import type { IPreferredEmeApiType } from "./compat/eme/index.ts";
+import type {
+  EncryptedMediaError,
+  MediaError,
+  NetworkError,
+  OtherError,
+} from "./errors/index.ts";
 import type {
   IPersistentSessionInfoV0,
   IPersistentSessionInfoV1,
   IPersistentSessionInfoV2,
   IPersistentSessionInfoV3,
   IPersistentSessionInfoV4,
-} from "./main_thread/decrypt";
-import type { IManifest, ITaggedTrack } from "./manifest";
-import type { ILocalManifest } from "./parsers/manifest/local";
-import type { IMetaPlaylist } from "./parsers/manifest/metaplaylist/metaplaylist_parser";
+} from "./main_thread/decrypt/index.ts";
+import type { IManifest, ITaggedTrack } from "./manifest/index.ts";
+import type { ILocalManifest } from "./parsers/manifest/local/index.ts";
+import type { IMetaPlaylist } from "./parsers/manifest/metaplaylist/metaplaylist_parser.ts";
 
 export type { ITaggedTrack as IMediaErrorTrackContext };
 
@@ -251,12 +256,7 @@ export interface IServerSyncInfos {
 
 /** Format of a loaded Manifest before parsing. */
 export type IInitialManifest =
-  | Document
-  | string
-  | ArrayBuffer
-  | IMetaPlaylist
-  | ILocalManifest
-  | IManifest;
+  Document | string | ArrayBuffer | IMetaPlaylist | ILocalManifest | IManifest;
 
 /** Type for the `representationFilter` API. */
 export type IRepresentationFilter = (
@@ -594,8 +594,7 @@ export interface IKeySystemOption {
   ) => Promise<BufferSource | null> | BufferSource | null;
   /** Supplementary optional configuration for the getLicense call. */
   getLicenseConfig?:
-    | { retry?: number | undefined; timeout?: number | undefined }
-    | undefined;
+    { retry?: number | undefined; timeout?: number | undefined } | undefined;
   /**
    * Optional `serverCertificate` we will try to set to speed-up the
    * license-fetching process.

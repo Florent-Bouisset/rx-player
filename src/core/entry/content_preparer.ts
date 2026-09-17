@@ -1,35 +1,39 @@
-import features from "../../features";
-import log from "../../log";
-import type { IContentInitializationData } from "../../main_thread/types";
-import type { IManifest } from "../../manifest";
-import type { IMediaSourceInterface } from "../../mse";
-import MainMediaSourceInterface from "../../mse/main_media_source_interface";
-import WorkerMediaSourceInterface from "../../mse/worker_media_source_interface";
-import type { IPlayerError } from "../../public_types";
-import idGenerator from "../../utils/id_generator";
-import type { CancellationError, CancellationSignal } from "../../utils/task_canceller";
-import TaskCanceller from "../../utils/task_canceller";
-import type { IRepresentationEstimator } from "../adaptive";
-import createAdaptiveRepresentationSelector from "../adaptive";
-import type { IRepresentationEstimatorThrottlers } from "../adaptive/adaptive_representation_selector";
-import CmcdDataBuilder from "../cmcd";
-import type { IManifestRefreshSettings } from "../fetchers";
-import { ManifestFetcher, SegmentQueueCreator } from "../fetchers";
-import CdnPrioritizer from "../fetchers/cdn_prioritizer";
-import createThumbnailFetcher from "../fetchers/thumbnails/thumbnail_fetcher";
-import type { IThumbnailFetcher } from "../fetchers/thumbnails/thumbnail_fetcher";
-import SegmentSinksStore from "../segment_sinks";
-import type { IAttachMediaSourceCoreMessagePayload, ICoreMessage } from "../types";
-import { CoreMessageType } from "../types";
-import CoreTextDisplayerInterface from "./core_text_displayer_interface";
-import FreezeResolver from "./FreezeResolver";
-import TrackChoiceSetter from "./track_choice_setter";
-import type { ICorePlugins } from "./utils";
+import BROWSER_GLOBALS from "../../compat/browser_compatibility_types.ts";
+import features from "../../features/index.ts";
+import log from "../../log.ts";
+import type { IContentInitializationData } from "../../main_thread/types.ts";
+import type { IManifest } from "../../manifest/index.ts";
+import type { IMediaSourceInterface } from "../../mse/index.ts";
+import MainMediaSourceInterface from "../../mse/main_media_source_interface.ts";
+import WorkerMediaSourceInterface from "../../mse/worker_media_source_interface.ts";
+import type { IPlayerError } from "../../public_types.ts";
+import idGenerator from "../../utils/id_generator.ts";
+import type {
+  CancellationError,
+  CancellationSignal,
+} from "../../utils/task_canceller.ts";
+import TaskCanceller from "../../utils/task_canceller.ts";
+import type { IRepresentationEstimatorThrottlers } from "../adaptive/adaptive_representation_selector.ts";
+import type { IRepresentationEstimator } from "../adaptive/index.ts";
+import createAdaptiveRepresentationSelector from "../adaptive/index.ts";
+import CmcdDataBuilder from "../cmcd/index.ts";
+import CdnPrioritizer from "../fetchers/cdn_prioritizer.ts";
+import type { IManifestRefreshSettings } from "../fetchers/index.ts";
+import { ManifestFetcher, SegmentQueueCreator } from "../fetchers/index.ts";
+import createThumbnailFetcher from "../fetchers/thumbnails/thumbnail_fetcher.ts";
+import type { IThumbnailFetcher } from "../fetchers/thumbnails/thumbnail_fetcher.ts";
+import SegmentSinksStore from "../segment_sinks/index.ts";
+import type { IAttachMediaSourceCoreMessagePayload, ICoreMessage } from "../types.ts";
+import { CoreMessageType } from "../types.ts";
+import CoreTextDisplayerInterface from "./core_text_displayer_interface.ts";
+import FreezeResolver from "./FreezeResolver.ts";
+import TrackChoiceSetter from "./track_choice_setter.ts";
+import type { ICorePlugins } from "./utils.ts";
 import {
   extractExternalPlugins,
   formatErrorForSender,
   updateCodecSupportInWorkerMode,
-} from "./utils";
+} from "./utils.ts";
 
 /** Function allowing to associate a unique identifier to all created `MediaSource` */
 const generateMediaSourceId = idGenerator();
@@ -72,22 +76,9 @@ export default class ContentPreparer {
    */
   private _currentMediaSourceCanceller: TaskCanceller;
 
-  /** @see constructor */
-  private _hasVideo: boolean;
-
-  /**
-   * @param {Object} capabilities
-   * @param {boolean} capabilities.hasVideo - If `true`, we're playing on an
-   * element which has video capabilities.
-   * If `false`, we're only able to play audio, optionally with subtitles.
-   *
-   * Typically this boolean is `true` for `<video>` HTMLElement and `false` for
-   * `<audio>` HTMLElement.
-   */
-  constructor({ hasVideo }: { hasVideo: boolean }) {
+  constructor() {
     this._currentContent = null;
     this._currentMediaSourceCanceller = new TaskCanceller("ContentPreparer MediaSource");
-    this._hasVideo = hasVideo;
     const contentCanceller = new TaskCanceller("ContentPreparer");
     this._contentCanceller = contentCanceller;
   }
@@ -126,9 +117,8 @@ export default class ContentPreparer {
       const {
         contentId,
         url,
-        hasText,
+        playbackSupport,
         transportOptions,
-        useMseInWorker,
         enableRepresentationAvoidance,
         transport,
       } = context;
@@ -194,9 +184,9 @@ export default class ContentPreparer {
           sendMessage,
           contentId,
           {
-            useMseInWorker,
-            hasVideo: this._hasVideo,
-            hasText,
+            mseInWorker: playbackSupport.mseInWorker,
+            videoTrack: playbackSupport.videoTrack,
+            textTrack: playbackSupport.textTrack,
           },
           currentMediaSourceCanceller.signal,
         );
@@ -215,7 +205,9 @@ export default class ContentPreparer {
         fetchThumbnailData,
         coreTextSender,
         trackChoiceSetter,
-        useMseInWorker,
+        mseInWorker: playbackSupport.mseInWorker,
+        videoTrack: playbackSupport.videoTrack,
+        textTrack: playbackSupport.textTrack,
       };
       mediaSource.addEventListener(
         "mediaSourceOpen",
@@ -340,9 +332,9 @@ export default class ContentPreparer {
         sendMessage,
         this._currentContent.contentId,
         {
-          useMseInWorker: this._currentContent.useMseInWorker,
-          hasVideo: this._hasVideo,
-          hasText: this._currentContent.coreTextSender !== null,
+          mseInWorker: this._currentContent.mseInWorker,
+          videoTrack: this._currentContent.videoTrack,
+          textTrack: this._currentContent.textTrack,
         },
         this._currentMediaSourceCanceller.signal,
       );
@@ -453,32 +445,47 @@ export interface IPreparedContentData {
    * WebWorker).
    * If `false`, they should be relied on on main thread.
    */
-  useMseInWorker: boolean;
+  mseInWorker: boolean;
+  /**
+   * If `true`, the current content should create and use a video buffer.
+   * If `false`, only audio should be buffered natively.
+   */
+  videoTrack: boolean;
+  /**
+   * If `true`, the current content should create and use text-track handling.
+   */
+  textTrack: boolean;
 }
 
 /**
  * @param {Function} sendMessage
  * @param {string} contentId
- * @param {Object} capabilities
- * @param {boolean} capabilities.useMseInWorker
- * @param {boolean} capabilities.hasVideo
- * @param {boolean} capabilities.hasText
+ * @param {Object} playbackSupport
+ * @param {boolean} playbackSupport.mseInWorker
+ * @param {boolean} playbackSupport.videoTrack
+ * @param {boolean} playbackSupport.textTrack
  * @param {Object} cancelSignal
  * @returns {Array.<Object>}
  */
 function createMediaSourceInterfaceAndSegmentSinksStore(
   sendMessage: (msg: ICoreMessage, transferables?: Transferable[]) => void,
   contentId: string,
-  capabilities: {
-    useMseInWorker: boolean;
-    hasVideo: boolean;
-    hasText: boolean;
+  playbackSupport: {
+    mseInWorker: boolean;
+    videoTrack: boolean;
+    textTrack: boolean;
   },
   cancelSignal: CancellationSignal,
 ): [IMediaSourceInterface, SegmentSinksStore, CoreTextDisplayerInterface | null] {
   let mediaSourceInterface: IMediaSourceInterface;
-  if (capabilities.useMseInWorker) {
-    const mainMediaSource = new MainMediaSourceInterface(generateMediaSourceId());
+  if (playbackSupport.mseInWorker) {
+    if (BROWSER_GLOBALS.MediaSource_ === undefined) {
+      throw new Error("ContentPreparer: Cannot use MSE-in-Worker: no MSE");
+    }
+    const mainMediaSource = new MainMediaSourceInterface(
+      generateMediaSourceId(),
+      BROWSER_GLOBALS.MediaSource_,
+    );
     mediaSourceInterface = mainMediaSource;
 
     let sentMediaSourceLink: IAttachMediaSourceCoreMessagePayload;
@@ -511,13 +518,13 @@ function createMediaSourceInterfaceAndSegmentSinksStore(
     );
   }
 
-  const textSender = capabilities.hasText
+  const textSender = playbackSupport.textTrack
     ? new CoreTextDisplayerInterface(contentId, sendMessage)
     : null;
-  const { hasVideo } = capabilities;
+  const { videoTrack } = playbackSupport;
   const segmentSinksStore = new SegmentSinksStore(
     mediaSourceInterface,
-    hasVideo,
+    videoTrack,
     textSender,
   );
   cancelSignal.register((err) => {

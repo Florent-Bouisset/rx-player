@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import config from "../../../../../config";
-import log from "../../../../../log";
-import type { IRepresentationIndex, ISegment } from "../../../../../manifest";
-import assert from "../../../../../utils/assert";
-import isNullOrUndefined from "../../../../../utils/is_null_or_undefined";
-import type { IEMSG } from "../../../../containers/isobmff";
-import type ManifestBoundsCalculator from "../manifest_bounds_calculator";
-import getInitSegment from "./get_init_segment";
-import { createDashUrlDetokenizer, constructRepresentationUrl } from "./tokens";
-import { getSegmentTimeRoundingError } from "./utils";
+import config from "../../../../../config.ts";
+import log from "../../../../../log.ts";
+import type { IRepresentationIndex, ISegment } from "../../../../../manifest/index.ts";
+import assert from "../../../../../utils/assert.ts";
+import isNullOrUndefined from "../../../../../utils/is_null_or_undefined.ts";
+import type { IEMSG } from "../../../../containers/isobmff/index.ts";
+import type ManifestBoundsCalculator from "../manifest_bounds_calculator.ts";
+import getInitSegment from "./get_init_segment.ts";
+import { createDashUrlDetokenizer, constructRepresentationUrl } from "./tokens.ts";
+import { getSegmentTimeRoundingError } from "./utils.ts";
 
 /**
  * Index property defined for a SegmentTemplate RepresentationIndex
@@ -44,17 +44,18 @@ export interface ITemplateIndex {
   timescale: number;
   /** Byte range for a possible index of segments in the server. */
   indexRange?: [number, number] | undefined;
-  /** Information on the initialization segment. */
-  initialization?:
-    | {
-        /**
-         * URL path, to add to the wanted CDN, to access the initialization segment.
-         */
-        url: string | null;
-        /** possible byte range to request it. */
-        range?: [number, number] | undefined;
-      }
-    | undefined;
+  /**
+   * Information on the initialization segment.
+   * `null` if this index has no initialization segment.
+   */
+  initialization: {
+    /**
+     * URL path, to add to the wanted CDN, to access the initialization segment.
+     */
+    url: string | null;
+    /** possible byte range to request it. */
+    range?: [number, number] | undefined;
+  } | null;
   /**
    * URL base to access any segment.
    * Can contain token to replace to convert it to real URLs.
@@ -103,8 +104,7 @@ export interface ITemplateIndexIndexArgument {
   duration?: number | undefined;
   indexRange?: [number, number] | undefined;
   initialization?:
-    | { media?: string | undefined; range?: [number, number] | undefined }
-    | undefined;
+    { media?: string | undefined; range?: [number, number] | undefined } | undefined;
   media?: string | undefined;
   presentationTimeOffset?: number | undefined;
   startNumber?: number | undefined;
@@ -215,7 +215,7 @@ export default class TemplateRepresentationIndex implements IRepresentationIndex
       indexRange: index.indexRange,
       indexTimeOffset,
       initialization: isNullOrUndefined(index.initialization)
-        ? undefined
+        ? null
         : { url: initializationUrl, range: index.initialization.range },
       url: segmentUrlTemplate,
       presentationTimeOffset,
@@ -230,10 +230,11 @@ export default class TemplateRepresentationIndex implements IRepresentationIndex
   }
 
   /**
-   * Construct init Segment.
-   * @returns {Object}
+   * Construct the metadata object for the init Segment linked to that index.
+   * Returns `null` if no initialization segment appears to be linked to that index.
+   * @returns {Object|null}
    */
-  getInitSegment(): ISegment {
+  getInitSegment(): ISegment | null {
     return getInitSegment(this._index, this._isEMSGWhitelisted);
   }
 

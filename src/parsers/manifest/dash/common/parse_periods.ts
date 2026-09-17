@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-import log from "../../../../log";
-import type { IManifest } from "../../../../manifest";
-import flatMap from "../../../../utils/flat_map";
-import idGenerator from "../../../../utils/id_generator";
-import isNullOrUndefined from "../../../../utils/is_null_or_undefined";
-import getMonotonicTimeStamp from "../../../../utils/monotonic_timestamp";
-import objectValues from "../../../../utils/object_values";
-import { utf8ToStr } from "../../../../utils/string_parsing";
+import log from "../../../../log.ts";
+import type { IManifest } from "../../../../manifest/index.ts";
+import flatMap from "../../../../utils/flat_map.ts";
+import idGenerator from "../../../../utils/id_generator.ts";
+import isNullOrUndefined from "../../../../utils/is_null_or_undefined.ts";
+import getMonotonicTimeStamp from "../../../../utils/monotonic_timestamp.ts";
+import objectValues from "../../../../utils/object_values.ts";
+import { utf8ToStr } from "../../../../utils/string_parsing.ts";
 import type {
   IManifestStreamEvent,
   IParsedAdaptation,
   IParsedAdaptations,
   IParsedPeriod,
-} from "../../types";
+} from "../../types.ts";
 import type {
   IEventStreamIntermediateRepresentation,
   IPeriodIntermediateRepresentation,
-} from "../node_parser_types";
-import type ContentProtectionParser from "./content_protection_parser";
-import flattenOverlappingPeriods from "./flatten_overlapping_periods";
-import getPeriodsTimeInformation from "./get_periods_time_infos";
-import type { IAdaptationSetContext } from "./parse_adaptation_sets";
-import parseAdaptationSets from "./parse_adaptation_sets";
-import resolveBaseURLs from "./resolve_base_urls";
+} from "../node_parser_types.ts";
+import type ContentProtectionParser from "./content_protection_parser.ts";
+import flattenOverlappingPeriods from "./flatten_overlapping_periods.ts";
+import getPeriodsTimeInformation from "./get_periods_time_infos.ts";
+import type { IAdaptationSetContext } from "./parse_adaptation_sets.ts";
+import parseAdaptationSets from "./parse_adaptation_sets.ts";
+import resolveBaseURLs from "./resolve_base_urls.ts";
 
 const generatePeriodID = idGenerator();
 
@@ -82,7 +82,7 @@ export default function parsePeriods(
     const isLastPeriod = i === periodsIR.length - 1;
     const periodIR = periodsIR[i];
     const xlinkInfos = context.xlinkInfos.get(periodIR);
-    const periodBaseURLs = resolveBaseURLs(context.baseURLs, periodIR.children.baseURLs);
+    const periodBaseURLs = resolveBaseURLs(context.baseURLs, periodIR.children.BaseURL);
 
     const { periodStart, periodDuration, periodEnd } = periodsTimeInformation[i];
 
@@ -110,8 +110,9 @@ export default function parsePeriods(
     const availabilityTimeComplete = periodIR.attributes.availabilityTimeComplete;
     const availabilityTimeOffset = periodIR.attributes.availabilityTimeOffset;
     const { manifestProfiles, contentProtectionParser } = context;
-    const { segmentTemplate } = periodIR.children;
-    contentProtectionParser.addReferences(periodIR.children.contentProtections ?? []);
+    const segmentTemplate =
+      periodIR.children.SegmentTemplate[periodIR.children.SegmentTemplate.length - 1];
+    contentProtectionParser.addReferences(periodIR.children.ContentProtection);
     const adapCtxt: IAdaptationSetContext = {
       availabilityTimeComplete,
       availabilityTimeOffset,
@@ -128,7 +129,7 @@ export default function parsePeriods(
       unsafelyBaseOnPreviousPeriod,
     };
     const { adaptations, thumbnailTracks } = parseAdaptationSets(
-      periodIR.children.adaptations,
+      periodIR.children.AdaptationSet,
       adapCtxt,
     );
 
@@ -136,7 +137,7 @@ export default function parsePeriods(
       periodIR.attributes.namespaces ?? [],
     );
     const streamEvents = generateStreamEvents(
-      periodIR.children.eventStreams,
+      periodIR.children.EventStream,
       periodStart,
       namespaces,
     );
@@ -308,7 +309,7 @@ function generateStreamEvents(
     const { schemeIdUri = "", timescale = 1 } = eventStreamIr.attributes;
     const allNamespaces = xmlNamespaces.concat(eventStreamIr.attributes.namespaces ?? []);
 
-    for (const eventIr of eventStreamIr.children.events) {
+    for (const eventIr of eventStreamIr.children.Event) {
       if (eventIr.eventStreamData !== undefined) {
         const start = (eventIr.presentationTime ?? 0) / timescale + periodStart;
         const end =
