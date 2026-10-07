@@ -13,8 +13,9 @@
     "noUnusedParameters": true,
     "noUnusedLocals": true,
     "types": [],
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "jsx": "react",
+    "rewriteRelativeImportExtensions": true,
     "typeRoots": ["../node_modules/@types"]
   },
   "include": ["../src/globals.prod.d.ts", "./scripts/**/*"]

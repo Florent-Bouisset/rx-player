@@ -17,11 +17,11 @@
 import type {
   IMediaKeys,
   IMediaKeySystemAccess,
-} from "../../compat/browser_compatibility_types";
-import { EncryptedMediaError, isKnownError } from "../../errors";
-import log from "../../log";
-import type { IPlayerError } from "../../public_types";
-import ServerCertificateStore from "./utils/server_certificate_store";
+} from "../../compat/browser_compatibility_types.ts";
+import { EncryptedMediaError, isKnownError } from "../../errors/index.ts";
+import log from "../../log.ts";
+import type { IPlayerError } from "../../public_types.ts";
+import ServerCertificateStore from "./utils/server_certificate_store.ts";
 
 /**
  * Call the setServerCertificate API with the given certificate.
@@ -117,9 +117,11 @@ export default async function trySettingServerCertificate(
       log.warn("DRM", "MediaKeys ignored the server certificate. Continuing without it.");
       return { type: "not-supported" };
     }
+    log.info("DRM", "Server certificate set with success");
     ServerCertificateStore.set(mediaKeys, serverCertificate);
     return { type: "success", value: result };
   } catch (error) {
+    log.warn("DRM", "Setting server certificate failed");
     const formattedErr = isKnownError(error)
       ? error
       : new EncryptedMediaError(

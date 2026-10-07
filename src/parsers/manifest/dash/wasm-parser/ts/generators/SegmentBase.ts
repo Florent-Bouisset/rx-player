@@ -14,69 +14,66 @@
  * limitations under the License.
  */
 
-import type { ISegmentBaseIntermediateRepresentation } from "../../../node_parser_types";
-import type { IAttributeParser } from "../parsers_stack";
-import { AttributeName } from "../types";
-import { parseString } from "../utils";
+import noop from "../../../../../../utils/noop.ts";
+import type {
+  ISegmentBaseChildren,
+  ISegmentBaseIntermediateRepresentation,
+} from "../../../node_parser_types.ts";
+import type { IAttributeParser, IChildrenParser } from "../parsers_stack.ts";
+import type ParsersStack from "../parsers_stack.ts";
+import { AttributeName, TagName } from "../types.ts";
+import { readBoolean, readFloat } from "../utils.ts";
+import generateInitializationAttrParser from "./Initialization.ts";
+
+export function generateSegmentBaseChildrenParser(
+  segmentBaseChildren: ISegmentBaseChildren,
+  linearMemory: WebAssembly.Memory,
+  parsersStack: ParsersStack,
+): IChildrenParser {
+  return function onSegmentBaseChildren(nodeId: number) {
+    if (nodeId === TagName.Initialization) {
+      const initialization = { attributes: {} };
+      segmentBaseChildren.Initialization.push(initialization);
+      parsersStack.pushParsers(
+        nodeId,
+        noop,
+        generateInitializationAttrParser(initialization, linearMemory),
+      );
+    } else {
+      parsersStack.pushParsers(nodeId, noop, noop);
+    }
+  };
+}
 
 export function generateSegmentBaseAttrParser(
   segmentBaseAttrs: ISegmentBaseIntermediateRepresentation,
   linearMemory: WebAssembly.Memory,
 ): IAttributeParser {
-  const textDecoder = new TextDecoder();
-  return function onSegmentBaseAttribute(attr, ptr, len) {
+  return function onSegmentBaseAttribute(attr, ptr, _len, value) {
     switch (attr) {
-      case AttributeName.InitializationRange: {
-        const dataView = new DataView(linearMemory.buffer);
-        if (segmentBaseAttrs.initialization === undefined) {
-          segmentBaseAttrs.initialization = {};
-        }
-        segmentBaseAttrs.initialization.range = [
-          dataView.getFloat64(ptr, true),
-          dataView.getFloat64(ptr + 8, true),
-        ];
-        break;
-      }
-
-      case AttributeName.InitializationMedia:
-        if (segmentBaseAttrs.initialization === undefined) {
-          segmentBaseAttrs.initialization = {};
-        }
-        segmentBaseAttrs.initialization.media = parseString(
-          textDecoder,
-          linearMemory.buffer,
-          ptr,
-          len,
-        );
-        break;
-
       case AttributeName.AvailabilityTimeOffset: {
-        const dataView = new DataView(linearMemory.buffer);
-        segmentBaseAttrs.availabilityTimeOffset = dataView.getFloat64(ptr, true);
+        segmentBaseAttrs.attributes.availabilityTimeOffset = readFloat(value);
         break;
       }
 
       case AttributeName.AvailabilityTimeComplete: {
-        segmentBaseAttrs.availabilityTimeComplete =
-          new DataView(linearMemory.buffer).getUint8(0) === 0;
+        segmentBaseAttrs.attributes.availabilityTimeComplete = readBoolean(value);
         break;
       }
 
       case AttributeName.PresentationTimeOffset: {
-        const dataView = new DataView(linearMemory.buffer);
-        segmentBaseAttrs.presentationTimeOffset = dataView.getFloat64(ptr, true);
+        segmentBaseAttrs.attributes.presentationTimeOffset = readFloat(value);
         break;
       }
 
       case AttributeName.TimeScale: {
-        const dataView = new DataView(linearMemory.buffer);
-        segmentBaseAttrs.timescale = dataView.getFloat64(ptr, true);
+        segmentBaseAttrs.attributes.timescale = readFloat(value);
         break;
       }
 
       case AttributeName.IndexRange: {
         const dataView = new DataView(linearMemory.buffer);
-        segmentBaseAttrs.indexRange = [
+        segmentBaseAttrs.attributes.indexRange = [
           dataView.getFloat64(ptr, true),
           dataView.getFloat64(ptr + 8, true),
         ];
@@ -84,26 +81,22 @@ export function generateSegmentBaseAttrParser(
       }
 
       case AttributeName.IndexRangeExact: {
-        segmentBaseAttrs.indexRangeExact =
-          new DataView(linearMemory.buffer).getUint8(0) === 0;
+        segmentBaseAttrs.attributes.indexRangeExact = readBoolean(value);
         break;
       }
 
       case AttributeName.Duration: {
-        const dataView = new DataView(linearMemory.buffer);
-        segmentBaseAttrs.duration = dataView.getFloat64(ptr, true);
+        segmentBaseAttrs.attributes.duration = readFloat(value);
         break;
       }
 
       case AttributeName.StartNumber: {
-        const dataView = new DataView(linearMemory.buffer);
-        segmentBaseAttrs.startNumber = dataView.getFloat64(ptr, true);
+        segmentBaseAttrs.attributes.startNumber = readFloat(value);
         break;
       }
 
       case AttributeName.EndNumber: {
-        const dataView = new DataView(linearMemory.buffer);
-        segmentBaseAttrs.endNumber = dataView.getFloat64(ptr, true);
+        segmentBaseAttrs.attributes.endNumber = readFloat(value);
         break;
       }
     }

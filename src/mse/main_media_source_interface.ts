@@ -1,16 +1,19 @@
-import type { IMediaSource, ISourceBuffer } from "../compat/browser_compatibility_types";
-import BROWSER_GLOBALS from "../compat/browser_compatibility_types";
-import tryToChangeSourceBufferType from "../compat/change_source_buffer_type";
-import { onSourceClose, onSourceEnded, onSourceOpen } from "../compat/event_listeners";
-import { MediaError, SourceBufferError } from "../errors";
-import log from "../log";
-import { concat } from "../utils/byte_parsing";
-import EventEmitter from "../utils/event_emitter";
-import isNullOrUndefined from "../utils/is_null_or_undefined";
-import objectAssign from "../utils/object_assign";
-import type { IRange } from "../utils/ranges";
-import { convertToRanges } from "../utils/ranges";
-import TaskCanceller, { CancellationError } from "../utils/task_canceller";
+import type {
+  IMediaSource,
+  IMediaSourceClass,
+  ISourceBuffer,
+} from "../compat/browser_compatibility_types.ts";
+import tryToChangeSourceBufferType from "../compat/change_source_buffer_type.ts";
+import { onSourceClose, onSourceEnded, onSourceOpen } from "../compat/event_listeners.ts";
+import { SourceBufferError } from "../errors/index.ts";
+import log from "../log.ts";
+import { concat } from "../utils/byte_parsing.ts";
+import EventEmitter from "../utils/event_emitter.ts";
+import isNullOrUndefined from "../utils/is_null_or_undefined.ts";
+import objectAssign from "../utils/object_assign.ts";
+import type { IRange } from "../utils/ranges.ts";
+import { convertToRanges } from "../utils/ranges.ts";
+import TaskCanceller, { CancellationError } from "../utils/task_canceller.ts";
 import type {
   IMediaSourceHandle,
   IMediaSourceInterface,
@@ -18,9 +21,9 @@ import type {
   ISourceBufferInterface,
   ISourceBufferInterfaceAppendBufferParameters,
   SourceBufferType,
-} from "./types";
-import { maintainEndOfStream } from "./utils/end_of_stream";
-import MediaSourceDurationUpdater from "./utils/media_source_duration_updater";
+} from "./types.ts";
+import { maintainEndOfStream } from "./utils/end_of_stream.ts";
+import MediaSourceDurationUpdater from "./utils/media_source_duration_updater.ts";
 
 /**
  * `IMediaSourceInterface` object for when the MSE API are directly available.
@@ -80,24 +83,20 @@ export default class MainMediaSourceInterface
    *
    * You can then obtain a link to that `MediaSource`, for example to link it
    * to an `HTMLMediaElement`, through the `handle` property.
+   *
+   * @param {string} id - The wanted `id` property for this new `MediaSource`
+   * instance.
+   * @param {Object|function} mediaSourceClass - `MediaSource` implementation
+   * relied on.
    */
-  constructor(id: string, forcedMediaSource?: new () => IMediaSource) {
+  constructor(id: string, mediaSourceClass: IMediaSourceClass) {
     super();
     this.id = id;
     this.sourceBuffers = [];
     this._canceller = new TaskCanceller("MainMediaSourceInterface");
 
-    const { MediaSource_ } = BROWSER_GLOBALS;
-    if (isNullOrUndefined(MediaSource_)) {
-      throw new MediaError(
-        "MEDIA_SOURCE_NOT_SUPPORTED",
-        "No MediaSource Object was found in the current browser.",
-      );
-    }
-
     log.info("mse", "Creating MediaSource");
-    const mediaSource =
-      forcedMediaSource !== undefined ? new forcedMediaSource() : new MediaSource_();
+    const mediaSource = new mediaSourceClass();
     const handle = (mediaSource as unknown as { handle: MediaProvider }).handle;
     this.handle = isNullOrUndefined(handle)
       ? // eslint-disable-next-line @typescript-eslint/no-restricted-types

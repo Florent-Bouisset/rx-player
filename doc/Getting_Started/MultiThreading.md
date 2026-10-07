@@ -81,22 +81,6 @@ If you do not encounter those situations, the advantages of "multithread" mode m
 evident. In any case, you may want to test that mode to see if it is improving your
 application.
 
-## About it being an "experimental" feature
-
-This "multithread" mode is added as an "experimental" feature.
-
-Like all other experimental features, it **is** considered stable enough to run in
-production. What we mean by "experimental" in the RxPlayer API is just that we may change
-its API at any RxPlayer version without impacting the RxPlayer's major version due to
-semantic versioning principles.
-
-For example, a new minor RxPlayer version could bring with it a complete API change
-regarding the corresponding `MULTI_THREAD` feature. Still, potential changes would be
-fully documented on that release's release note and changelog file.
-
-The choice of labeling this feature as experimental has been made so we can have more
-freedom if we find ways to provide sensible improvements to its API in the future.
-
 ## Quick start
 
 You can just test this feature quickly by running the following code:
@@ -106,13 +90,13 @@ You can just test this feature quickly by running the following code:
 // default import)
 import RxPlayer from "rx-player/minimal";
 
-// Import the MULTI_THREAD experimental feature
-import { MULTI_THREAD } from "rx-player/experimental/features";
+// Import the MULTI_THREAD feature
+import { MULTI_THREAD } from "rx-player/features";
 
 // To simplify this example, we'll directly import an "embedded" version of the
 // supplementary code loaded by the `MULTI_THREAD` feature.
 // We could also load it on demand through a URL
-import { EMBEDDED_WORKER } from "rx-player/experimental/features/embeds";
+import { EMBEDDED_WORKER } from "rx-player/features/embeds";
 
 // Add the MULTI_THREAD feature, like any other feature
 RxPlayer.addFeatures([MULTI_THREAD]);
@@ -133,9 +117,7 @@ player.attachWorker({ workerUrl: EMBEDDED_WORKER }).catch((err) => {
 
 // Any further call to `loadVideo` may rely on WebWorker if possible (see
 // limitations below)
-player.loadVideo({
-  /* ... */
-});
+player.loadVideo({/* ... */});
 
 // As a long as a content is loaded (or even loading or reloading), you can know
 // if we rely on a WebWorker to play it by calling:
@@ -221,7 +203,7 @@ for most cases:
 
   ```js
   import RxPlayer from "rx-player/minimal";
-  import { MULTI_THREAD } from "rx-player/experimental/features";
+  import { MULTI_THREAD } from "rx-player/features";
   import { DASH } from "rx-player/features";
 
   RxPlayer.addFeatures([
@@ -276,10 +258,10 @@ your application.
 You can find it at any of the following places:
 
 - The easiest way is to just import in your application its "embedded" version, exported
-  through the `"rx-player/experimental/features/embeds"` path:
+  through the `"rx-player/features/embeds"` path:
 
   ```js
-  import { EMBEDDED_WORKER } from "rx-player/experimental/features/embeds";
+  import { EMBEDDED_WORKER } from "rx-player/features/embeds";
   ```
 
   This allows to bypass the need to store and serve separately that file.
@@ -310,11 +292,10 @@ those "multithread" scenarios. Note that this is unneeded for most usages.
 To do this, you have to explicitly provide the corresponding WebAssembly file. Like for
 the worker file, it can either be found:
 
-- As an "embedded" version, exported through the
-  `"rx-player/experimental/features/embeds"` path:
+- As an "embedded" version, exported through the `"rx-player/features/embeds"` path:
 
   ```js
-  import { EMBEDDED_DASH_WASM } from "rx-player/experimental/features/embeds";
+  import { EMBEDDED_DASH_WASM } from "rx-player/features/embeds";
   ```
 
   Note however that the embedded version of this WebAssembly file is much bigger than the
@@ -329,15 +310,15 @@ the worker file, it can either be found:
 
 ### Step 2: importing the `MULTI_THREAD` feature and adding it
 
-The `MULTI_THREAD` feature, then needs to be imported through the
-`rx-player/experimental/features` path and added to the RxPlayer's **class** (and not an
-instance, `addFeatures` being a static method), like any other feature:
+The `MULTI_THREAD` feature then needs to be imported through the `rx-player/features` path
+and added to the RxPlayer's **class** (and not an instance, `addFeatures` being a static
+method), like any other feature:
 
 ```js
 // Import the RxPlayer
 // (here through the "minimal" build, though it doesn't change for other builds)
 import RxPlayer from "rx-player/minimal";
-import { MULTI_THREAD } from "rx-player/experimental/features";
+import { MULTI_THREAD } from "rx-player/features";
 
 RxPlayer.addFeatures([MULTI_THREAD]);
 ```
@@ -354,9 +335,7 @@ optionally the `mpd-parser.wasm` file if you wanted WebAssembly capabilities) by
 either its URL (obtained in step 1) or its embedded version:
 
 ```js
-const player = new RxPlayer({
-  /* ... */
-});
+const player = new RxPlayer({/* ... */});
 player
   .attachWorker({ workerUrl: URL_TO_WORKER_FILE })
   .then(() => console.log("Worker succesfully attached!"))
@@ -390,9 +369,7 @@ can be considered safer and simpler to just await `attachWorker`'s returned Prom
 loading a content:
 
 ```js
-const player = new RxPlayer({
-  /* ... */
-});
+const player = new RxPlayer({/* ... */});
 try {
   await player.attachWorker({
     workerUrl: URL_TO_WORKER_FILE,
@@ -405,9 +382,7 @@ try {
 
 // This loaded content may only load in "multithread" mode if `attachWorker`
 // succeeded
-player.loadVideo({
-  /* ... */
-});
+player.loadVideo({/* ... */});
 ```
 
 ### Step 4: Load a content

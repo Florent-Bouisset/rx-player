@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import EventEmitter from "./event_emitter";
-import getMonotonicTimeStamp from "./monotonic_timestamp";
-import noop from "./noop";
+import EventEmitter from "./event_emitter.ts";
+import getMonotonicTimeStamp from "./monotonic_timestamp.ts";
+import noop from "./noop.ts";
 
 export type ILoggerLevel = "NONE" | "ERROR" | "WARNING" | "INFO" | "DEBUG";
 
@@ -24,9 +24,7 @@ export type ILogFormat = "standard" | "full";
 
 type IAcceptedLogValueBase = boolean | string | number | null | undefined;
 export type IAcceptedLogValue =
-  | IAcceptedLogValueBase
-  | Error
-  | Partial<Record<string, IAcceptedLogValueBase>>;
+  IAcceptedLogValueBase | Error | Partial<Record<string, IAcceptedLogValueBase>>;
 
 /**
  * Area of the code the log is linked to.

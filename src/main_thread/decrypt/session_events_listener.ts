@@ -17,21 +17,21 @@
 import type {
   IMediaKeySession,
   IMediaKeySystemAccess,
-} from "../../compat/browser_compatibility_types";
+} from "../../compat/browser_compatibility_types.ts";
 import {
   onKeyError,
   onKeyMessage,
   onKeyStatusesChange,
-} from "../../compat/event_listeners";
-import { EncryptedMediaError } from "../../errors";
-import log from "../../log";
-import type { IKeySystemOption, IPlayerError } from "../../public_types";
-import isNonEmptyString from "../../utils/is_non_empty_string";
-import isNullOrUndefined from "../../utils/is_null_or_undefined";
-import type { IBackoffOptions } from "../../utils/retry_promise_with_backoff";
-import retryPromiseWithBackoff from "../../utils/retry_promise_with_backoff";
-import TaskCanceller, { CancellationSignal } from "../../utils/task_canceller";
-import checkKeyStatuses from "./utils/check_key_statuses";
+} from "../../compat/event_listeners.ts";
+import { EncryptedMediaError } from "../../errors/index.ts";
+import log from "../../log.ts";
+import type { IKeySystemOption, IPlayerError } from "../../public_types.ts";
+import isNonEmptyString from "../../utils/is_non_empty_string.ts";
+import isNullOrUndefined from "../../utils/is_null_or_undefined.ts";
+import type { IBackoffOptions } from "../../utils/retry_promise_with_backoff.ts";
+import retryPromiseWithBackoff from "../../utils/retry_promise_with_backoff.ts";
+import TaskCanceller, { CancellationSignal } from "../../utils/task_canceller.ts";
+import checkKeyStatuses from "./utils/check_key_statuses.ts";
 
 /**
  * Listen to various events from a MediaKeySession and react accordingly
@@ -216,12 +216,13 @@ export default function SessionEventsListener(
 
         if (getLicenseTimeout >= 0) {
           timeoutId = setTimeout(() => {
+            log.warn("DRM", "getLicense timed out", { messageType });
             rej(
               new GetLicenseTimeoutError(
                 `"getLicense" timeout exceeded (${getLicenseTimeout} ms)`,
               ),
             );
-          }, getLicenseTimeout) as unknown as number;
+          }, getLicenseTimeout);
         }
         Promise.resolve(getLicense).then(clearTimeoutAndResolve, clearTimeoutAndReject);
       } catch (err) {
@@ -231,12 +232,14 @@ export default function SessionEventsListener(
         if (timeoutId !== undefined) {
           clearTimeout(timeoutId);
         }
+        log.debug("DRM", "getLicense succeeded", { messageType });
         res(data);
       }
       function clearTimeoutAndReject(err: unknown) {
         if (timeoutId !== undefined) {
           clearTimeout(timeoutId);
         }
+        log.debug("DRM", "getLicense failed", { messageType });
         rej(err);
       }
     });

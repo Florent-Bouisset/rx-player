@@ -1,8 +1,9 @@
 {
   "name": "rx-player",
   "author": "Canal+",
-  "version": "4.4.1",
+  "version": "4.5.0",
   "description": "Canal+ HTML5 Video Player",
+  "type": "module",
   "main": "./dist/commonjs/index.js",
   "module": "./dist/es2017/index.js",
   "browser": "./dist/es2017/index.js",
@@ -61,6 +62,11 @@
       "import": "./dist/es2017/features/list/index.js",
       "require": "./dist/commonjs/features/list/index.js",
       "default": "./dist/es2017/features/list/index.js"
+    },
+    "./features/embeds": {
+      "import": "./dist/es2017/__GENERATED_CODE/index.js",
+      "require": "./dist/commonjs/__GENERATED_CODE/index.js",
+      "default": "./dist/es2017/__GENERATED_CODE/index.js"
     },
     "./features/*": {
       "import": "./dist/es2017/features/list/*.js",
@@ -123,6 +129,9 @@
       "features": [
         "./dist/es2017/features/list/index.d.ts"
       ],
+      "features/embeds": [
+        "./dist/es2017/__GENERATED_CODE/index.d.ts"
+      ],
       "features/*": [
         "./dist/es2017/features/list/*.d.ts"
       ],
@@ -163,14 +172,15 @@
   "scripts": {
     "build": "node ./scripts/generate_build.mjs",
     "build:all": "bash ./scripts/make_all_builds.sh",
-    "build:wasm:debug": "mkdir -p dist && cd ./src/parsers/manifest/dash/wasm-parser && cargo build --target wasm32-unknown-unknown && cp target/wasm32-unknown-unknown/debug/mpd_node_parser.wasm ../../../../../dist/mpd-parser.wasm",
+    "build:wasm:debug": "mkdir -p dist && cd ./src/parsers/manifest/dash/wasm-parser && RUSTFLAGS=\"-Ctarget-cpu=mvp\" cargo +nightly build -Zbuild-std=std,panic_abort --target wasm32-unknown-unknown && cp target/wasm32-unknown-unknown/debug/mpd_node_parser.wasm ../../../../../dist/mpd-parser.wasm && cd ../../../../../ && bash ./scripts/check_wasm_features.sh dist/mpd-parser.wasm",
     "build:wasm:release": "bash ./scripts/build_wasm_release.sh",
     "bundle": "node ./scripts/run_bundler.mjs src/index.ts --production-mode --globals --name \"RxPlayer default bundle\" -o dist/rx-player.js",
     "bundle:min": "node ./scripts/run_bundler.mjs src/index.ts --production-mode --globals --name \"RxPlayer minified bundle\" -o dist/rx-player.min.js --minify",
     "certificate": "bash ./scripts/generate_certificate.sh",
-    "check": "npm run types && npm run lint && npm run types:unit_tests",
+    "check": "npm run types && npm run lint",
     "check:all": "npm run types:all && npm run lint:all",
     "check:demo": "npm run types:demo && npm run lint:demo",
+    "check:wasm": "bash ./scripts/check_wasm_features.sh",
     "clean": "node ./scripts/utils/remove_dir.mjs dist",
     "demo": "node ./scripts/build_demo.mjs --production-mode",
     "doc": "readme.doc --clean --input doc/ --output doc/generated -p \"$(cat VERSION)\"",
@@ -203,11 +213,12 @@
     "test:memory:chrome:watch": "npm run --silent test:integration:notice && cross-env BROWSER_CONFIG=chrome vitest watch tests/memory",
     "test:performance": "node ./tests/performance/run.mjs",
     "test:unit": "vitest --config vitest.config.unit.mjs",
+    "test:parsers": "npm run build:wasm:release && vitest run --config vitest.config.parsers.mjs",
     "types": "tsc --noEmit --project .",
     "types:all": "npm run types && npm run types:demo && npm run types:unit_tests && npm run types:scripts",
     "types:demo": "tsc --noEmit --project demo/",
     "types:scripts": "tsc --project ./scripts",
-    "types:unit_tests": "tsc --noEmit --project ./tsconfig.unit-tests.json",
+    "types:unit_tests": "tsc --noEmit --project ./tests/unit/tsconfig.json",
     "update-version": "bash ./scripts/update-version-number.sh"
   },
   "repository": {
@@ -215,33 +226,36 @@
     "url": "git://github.com/canalplus/rx-player.git"
   },
   "devDependencies": {
-    "@canalplus/readme.doc": "0.6.0",
-    "@eslint/js": "^9.33.0",
+    "@canalplus/readme.doc": "0.6.1",
+    "@eslint/js": "9.39.5",
+    "@swc/cli": "^0.8.1",
+    "@swc/core": "^1.15.47",
+    "@types/node": "22.20.1",
     "@types/react": "19.2.16",
     "@types/react-dom": "19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.40.0",
     "@typescript-eslint/parser": "^8.40.0",
-    "@vitest/browser-webdriverio": "^4.1.8",
+    "@vitest/browser-webdriverio": "^4.1.10",
     "core-js": "3.49.0",
     "cross-env": "^10.1.0",
     "esbuild": "0.28.1",
-    "eslint": "9.33.0",
+    "eslint": "9.39.5",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-ban": "2.0.0",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-jsdoc": "54.1.0",
     "eslint-plugin-react": "7.37.5",
-    "github-buttons": "2.32.0",
+    "github-buttons": "2.33.0",
     "html-entities": "2.6.0",
-    "jsdom": "^29.1.1",
-    "prettier": "^3.8.3",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "jsdom": "^30.0.1",
+    "prettier": "^3.9.6",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "regenerator-runtime": "0.14.1",
-    "semver": "7.8.1",
-    "typescript": "5.9.2",
+    "semver": "7.8.5",
+    "typescript": "6.0.2",
     "typescript-eslint": "^8.40.0",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.10"
   },
   "scripts-list": {
     " INFO ": "---- This field is read by the `list` npm script and allows to guide you through the RxPlayer's npm scripts ----",

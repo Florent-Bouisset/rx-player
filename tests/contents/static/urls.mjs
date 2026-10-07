@@ -1,5 +1,3 @@
-/* eslint-env node */
-
 // Every URLs served by our server. For test purposes.
 
 import urls1 from "./Smooth_static/urls.mjs";
@@ -17,6 +15,8 @@ import urls12 from "./DASH_DRM_static_SegmentTemplate/urls.mjs";
 import urls13 from "./DASH_dynamic_SegmentTemplate_UnsupportedAudio/urls.mjs";
 import urls14 from "./imagetracks/urls.mjs";
 import urls15 from "./DASH_static_audio_tag/urls.mjs";
+import urls16 from "./DASH_static_Large_MultiPeriod/urls.mjs";
+import urls17 from "./DASH_static_SelfInitializing/urls.mjs";
 
 export default [
   ...urls1,
@@ -34,4 +34,6 @@ export default [
   ...urls13,
   ...urls14,
   ...urls15,
+  ...urls16,
+  ...urls17,
 ];

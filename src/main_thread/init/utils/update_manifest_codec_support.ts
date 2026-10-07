@@ -1,11 +1,11 @@
-import type { IMediaElement } from "../../../compat/browser_compatibility_types";
-import isCodecSupported from "../../../compat/is_codec_supported";
-import type { IManifestMetadata } from "../../../manifest";
-import type Manifest from "../../../manifest/classes";
-import isNullOrUndefined from "../../../utils/is_null_or_undefined";
-import type ContentDecryptor from "../../decrypt";
-import { ContentDecryptorState } from "../../decrypt";
-import type { ICodecSupportInfo } from "../../types";
+import type { IMediaSourceClass } from "../../../compat/browser_compatibility_types.ts";
+import isCodecSupported from "../../../compat/is_codec_supported.ts";
+import type Manifest from "../../../manifest/classes/index.ts";
+import type { IManifestMetadata } from "../../../manifest/index.ts";
+import isNullOrUndefined from "../../../utils/is_null_or_undefined.ts";
+import type ContentDecryptor from "../../decrypt/index.ts";
+import { ContentDecryptorState } from "../../decrypt/index.ts";
+import type { ICodecSupportInfo } from "../../types.ts";
 
 /**
  * Returns a list of all codecs that the support is not known yet on the given
@@ -57,15 +57,17 @@ export function getCodecsWithUnknownSupport(
  * Because probing for codec support is always synchronous in the main thread,
  * calling this function ensures that support is now known.
  *
+ * @param {Object|Function|null|undefined} mediaSourceClass - The `MediaSource`
+ * class that is intended to be used to play the content.
  * @param {Object} manifest - The manifest to update
  * @param {Object|null} contentDecryptor - The current content decryptor
  * @param {boolean} isPlayingWithMSEinWorker - True if WebWorker is used with MSE in worker
  * @returns {Array.<Object>}
  */
 export function updateManifestCodecSupport(
+  mediaSourceClass: IMediaSourceClass,
   manifest: IManifestMetadata,
   contentDecryptor: ContentDecryptor | null,
-  mediaElement: IMediaElement,
   isPlayingWithMSEinWorker: boolean,
 ): ICodecSupportInfo[] {
   const codecSupportMap: Map<
@@ -91,7 +93,7 @@ export function updateManifestCodecSupport(
     }
 
     let newData;
-    const isSupported = isCodecSupported(mediaElement, inputCodec);
+    const isSupported = isCodecSupported(mediaSourceClass, inputCodec);
     if (!isSupported) {
       newData = {
         isSupportedClear: false,

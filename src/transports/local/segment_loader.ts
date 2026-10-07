@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-import { CustomLoaderError } from "../../errors";
-import type { ICdnMetadata } from "../../parsers/manifest";
+import { CustomLoaderError } from "../../errors/index.ts";
+import type { ICdnMetadata } from "../../parsers/manifest/index.ts";
 import type {
   ILocalManifestInitSegmentLoader,
   ILocalManifestSegmentLoader,
-} from "../../parsers/manifest/local";
-import createCancellablePromise from "../../utils/create_cancellable_promise";
-import isNullOrUndefined from "../../utils/is_null_or_undefined";
-import type { CancellationSignal } from "../../utils/task_canceller";
+} from "../../parsers/manifest/local/index.ts";
+import createCancellablePromise from "../../utils/create_cancellable_promise.ts";
+import isNullOrUndefined from "../../utils/is_null_or_undefined.ts";
+import type { CancellationSignal } from "../../utils/task_canceller.ts";
 import type {
   ISegmentContext,
   ISegmentLoaderCallbacks,
   ISegmentLoaderOptions,
   ISegmentLoaderResultSegmentLoaded,
-} from "../types";
+} from "../types.ts";
 
 /**
  * @param {Function} customSegmentLoader
@@ -143,9 +143,7 @@ function loadSegment(
 
       // Format error and send it
       const castedErr = err as
-        | null
-        | undefined
-        | { message?: string; canRetry?: boolean; xhr?: XMLHttpRequest };
+        null | undefined | { message?: string; canRetry?: boolean; xhr?: XMLHttpRequest };
       const message =
         castedErr?.message ??
         "Unknown error when fetching a local segment through a " +

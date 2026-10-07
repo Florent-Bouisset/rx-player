@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import type { IScheme } from "../../../node_parser_types";
-import type { IAttributeParser } from "../parsers_stack";
-import { AttributeName } from "../types";
-import { parseString } from "../utils";
+import type { ISchemeAttributes } from "../../../node_parser_types.ts";
+import type { IAttributeParser } from "../parsers_stack.ts";
+import { AttributeName } from "../types.ts";
+import { parseString } from "../utils.ts";
 
 /**
  * Generate an "attribute parser" once inside a `BaseURL` node.
@@ -26,18 +26,17 @@ import { parseString } from "../utils";
  * @returns {Function}
  */
 export function generateSchemeAttrParser(
-  schemeAttrs: IScheme,
+  schemeAttrs: ISchemeAttributes,
   linearMemory: WebAssembly.Memory,
 ): IAttributeParser {
-  const textDecoder = new TextDecoder();
   return function onMPDAttribute(attr: number, ptr: number, len: number) {
     switch (attr) {
       case AttributeName.SchemeIdUri:
-        schemeAttrs.schemeIdUri = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        schemeAttrs.schemeIdUri = parseString(linearMemory.buffer, ptr, len);
         break;
 
       case AttributeName.SchemeValue:
-        schemeAttrs.value = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        schemeAttrs.value = parseString(linearMemory.buffer, ptr, len);
         break;
     }
   };

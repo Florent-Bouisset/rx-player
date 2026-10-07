@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import noop from "../../../../../../utils/noop";
+import noop from "../../../../../../utils/noop.ts";
 import type {
   IEventStreamAttributes,
   IEventStreamChildren,
   IEventStreamEventIntermediateRepresentation,
-} from "../../../node_parser_types";
-import type { IAttributeParser, IChildrenParser } from "../parsers_stack";
-import type ParsersStack from "../parsers_stack";
-import { AttributeName, TagName } from "../types";
-import { parseString } from "../utils";
+} from "../../../node_parser_types.ts";
+import type { IAttributeParser, IChildrenParser } from "../parsers_stack.ts";
+import type ParsersStack from "../parsers_stack.ts";
+import { AttributeName, TagName } from "../types.ts";
+import { parseString, readFloat } from "../utils.ts";
 
 /**
  * Generate a "children parser" once inside a `EventStream` node.
@@ -43,7 +43,7 @@ export function generateEventStreamChildrenParser(
     switch (nodeId) {
       case TagName.EventStreamElt: {
         const event = {};
-        childrenObj.events.push(event);
+        childrenObj.Event.push(event);
         const attrParser = generateEventAttrParser(event, linearMemory, fullMpd);
         parsersStack.pushParsers(nodeId, noop, attrParser);
         break;
@@ -67,18 +67,22 @@ export function generateEventStreamAttrParser(
   esAttrs: IEventStreamAttributes,
   linearMemory: WebAssembly.Memory,
 ): IAttributeParser {
-  const textDecoder = new TextDecoder();
-  return function onEventStreamAttribute(attr: number, ptr: number, len: number) {
+  return function onEventStreamAttribute(
+    attr: number,
+    ptr: number,
+    len: number,
+    value?: number,
+  ) {
     const dataView = new DataView(linearMemory.buffer);
     switch (attr) {
       case AttributeName.SchemeIdUri:
-        esAttrs.schemeIdUri = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        esAttrs.schemeIdUri = parseString(linearMemory.buffer, ptr, len);
         break;
       case AttributeName.SchemeValue:
-        esAttrs.value = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        esAttrs.value = parseString(linearMemory.buffer, ptr, len);
         break;
       case AttributeName.TimeScale:
-        esAttrs.timescale = dataView.getFloat64(ptr, true);
+        esAttrs.timescale = readFloat(value);
         break;
       case AttributeName.Namespace: {
         const xmlNs = { key: "", value: "" };
@@ -86,12 +90,12 @@ export function generateEventStreamAttrParser(
         const keySize = dataView.getUint32(offset);
         offset += 4;
 
-        xmlNs.key = parseString(textDecoder, linearMemory.buffer, offset, keySize);
+        xmlNs.key = parseString(linearMemory.buffer, offset, keySize);
         offset += keySize;
 
         const valSize = dataView.getUint32(offset);
         offset += 4;
-        xmlNs.value = parseString(textDecoder, linearMemory.buffer, offset, valSize);
+        xmlNs.value = parseString(linearMemory.buffer, offset, valSize);
 
         if (esAttrs.namespaces === undefined) {
           esAttrs.namespaces = [xmlNs];
@@ -115,18 +119,22 @@ function generateEventAttrParser(
   linearMemory: WebAssembly.Memory,
   fullMpd: ArrayBufferLike,
 ): IAttributeParser {
-  const textDecoder = new TextDecoder();
-  return function onEventStreamAttribute(attr: number, ptr: number, len: number) {
+  return function onEventStreamAttribute(
+    attr: number,
+    ptr: number,
+    len: number,
+    value?: number,
+  ) {
     const dataView = new DataView(linearMemory.buffer);
     switch (attr) {
       case AttributeName.EventPresentationTime:
-        eventAttr.presentationTime = dataView.getFloat64(ptr, true);
+        eventAttr.presentationTime = readFloat(value);
         break;
       case AttributeName.Duration:
-        eventAttr.duration = dataView.getFloat64(ptr, true);
+        eventAttr.duration = readFloat(value);
         break;
       case AttributeName.Id:
-        eventAttr.id = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        eventAttr.id = parseString(linearMemory.buffer, ptr, len);
         break;
       case AttributeName.EventStreamEltRange: {
         const rangeStart = dataView.getFloat64(ptr, true);

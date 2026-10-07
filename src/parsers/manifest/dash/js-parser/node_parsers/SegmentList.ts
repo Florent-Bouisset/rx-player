@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-import objectAssign from "../../../../../utils/object_assign";
-import type { ITNode } from "../../../../../utils/xml-parser";
+import objectAssign from "../../../../../utils/object_assign.ts";
+import type { ITNode } from "../../../../../utils/xml-parser.ts";
 import type {
+  ISegmentListChildren,
   ISegmentListIntermediateRepresentation,
   ISegmentUrlIntermediateRepresentation,
-} from "../../node_parser_types";
-import parseSegmentBase from "./SegmentBase";
-import parseSegmentURL from "./SegmentURL";
+} from "../../node_parser_types.ts";
+import parseSegmentBase from "./SegmentBase.ts";
+import parseSegmentURL from "./SegmentURL.ts";
 
 /**
  * @param {Object} root
@@ -47,6 +48,8 @@ export default function parseSegmentList(
       warnings = warnings.concat(segmentURLWarnings);
     }
   }
-  const ret = objectAssign(base, { list });
-  return [ret, warnings];
+  const children: ISegmentListChildren = objectAssign(base.children, {
+    SegmentURL: list,
+  });
+  return [{ children, attributes: base.attributes }, warnings];
 }

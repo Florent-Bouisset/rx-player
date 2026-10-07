@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { base64ToBytes } from "../../../../../../utils/base64";
-import { hexToBytes } from "../../../../../../utils/string_parsing";
-import type { IContentProtectionIntermediateRepresentation } from "../../../node_parser_types";
-import type { IAttributeParser } from "../parsers_stack";
-import { AttributeName } from "../types";
-import { parseString } from "../utils";
+import { base64ToBytes } from "../../../../../../utils/base64.ts";
+import { hexToBytes } from "../../../../../../utils/string_parsing.ts";
+import type { IContentProtectionIntermediateRepresentation } from "../../../node_parser_types.ts";
+import type { IAttributeParser } from "../parsers_stack.ts";
+import { AttributeName } from "../types.ts";
+import { parseString } from "../utils.ts";
 
 /**
  * @param {Object} cp
@@ -32,33 +32,32 @@ export function generateContentProtectionAttrParser(
 ): IAttributeParser {
   const cpAttrs = cp.attributes;
   const cpChildren = cp.children;
-  const textDecoder = new TextDecoder();
   return function onContentProtectionAttribute(attr: number, ptr: number, len: number) {
     switch (attr) {
       case AttributeName.SchemeIdUri:
-        cpAttrs.schemeIdUri = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        cpAttrs.schemeIdUri = parseString(linearMemory.buffer, ptr, len);
         break;
       case AttributeName.ContentProtectionValue:
-        cpAttrs.value = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        cpAttrs.value = parseString(linearMemory.buffer, ptr, len);
         break;
       case AttributeName.ContentProtectionKeyId: {
-        const kid = parseString(textDecoder, linearMemory.buffer, ptr, len);
-        cpAttrs.keyId = hexToBytes(kid.replace(/-/g, ""));
+        const kid = parseString(linearMemory.buffer, ptr, len);
+        cpAttrs["cenc:default_KID"] = hexToBytes(kid.replace(/-/g, ""));
         break;
       }
       case AttributeName.ContentProtectionCencPSSH:
         try {
-          const b64 = parseString(textDecoder, linearMemory.buffer, ptr, len);
-          cpChildren.cencPssh.push(base64ToBytes(b64));
+          const b64 = parseString(linearMemory.buffer, ptr, len);
+          cpChildren["cenc:pssh"].push({ value: base64ToBytes(b64) });
         } catch (_) {
           /* TODO log error? register as warning? */
         }
         break;
       case AttributeName.ContentProtectionRef:
-        cpAttrs.ref = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        cpAttrs.ref = parseString(linearMemory.buffer, ptr, len);
         break;
       case AttributeName.ContentProtectionRefId:
-        cpAttrs.refId = parseString(textDecoder, linearMemory.buffer, ptr, len);
+        cpAttrs.refId = parseString(linearMemory.buffer, ptr, len);
         break;
     }
   };

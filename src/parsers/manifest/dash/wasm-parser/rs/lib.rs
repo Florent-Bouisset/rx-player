@@ -1,22 +1,20 @@
 extern crate core;
-extern crate quick_xml;
-
 mod errors;
 mod events;
 mod processor;
 mod reader;
 mod reportable;
 mod utils;
+mod xml;
 
 pub use errors::{ParsingError, Result};
 
 use events::*;
 use processor::MPDProcessor;
 use reader::MPDReader;
-use std::io::BufReader;
 
 #[cfg_attr(target_family = "wasm", link(wasm_import_module = "env"))]
-extern "C" {
+unsafe extern "C" {
     /// JS callback called each time a new known tag is encountered in the MPD.
     ///
     /// The `tag_name` corresponds to the value of the TagName enum (@see
@@ -41,13 +39,19 @@ extern "C" {
     /// # Arguments
     ///
     /// * `attr_name` - u8 describing the name of the attribute that has just
-    /// been encountered.
+    ///   been encountered.
     ///
     /// * `ptr` - Pointer to the beginning of the corresponding data in the
-    /// WebAssembly's linear memory.
+    ///   WebAssembly's linear memory.
     ///
     /// * `len` - Length of the data - starting at `ptr` - in bytes.
     fn onAttribute(attr_name: AttributeName, ptr: *const u8, len: usize);
+
+    /// JS callback called when a numeric attribute has been parsed.
+    fn onFloatAttribute(attr_name: AttributeName, value: f64);
+
+    /// JS callback called when a boolean attribute has been parsed.
+    fn onBooleanAttribute(attr_name: AttributeName, value: u32);
 
     /// JS callback for other specific operations, for example logging and warnings.
     ///
@@ -56,7 +60,7 @@ extern "C" {
     /// * `evt_type` - Identify the type of event that is wanted.
     ///
     /// * `ptr` - Pointer to the beginning of the corresponding data in the
-    /// WebAssembly's linear memory.
+    ///   WebAssembly's linear memory.
     ///
     /// * `len` - Length of the data - starting at `ptr` - in bytes.
     fn onCustomEvent(evt_type: CustomEventType, ptr: *const u8, len: usize);
@@ -70,17 +74,16 @@ extern "C" {
     /// # Arguments
     ///
     /// * `ptr` - Pointer to where the MPD data should be set, in WebAssembly's
-    /// linear memory.
+    ///   linear memory.
     ///
     /// * `size` - Optimal length of data that is wanted, in bytes.
-    /// Less data (but not more) can be read. The true read length is returned
-    /// by this function.
+    ///   Less data (but not more) can be read. The true read length is returned
+    ///   by this function.
     fn readNext(ptr: *const u8, size: usize) -> usize;
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn parse() {
-    let buf_read = BufReader::new(MPDReader {});
-    let mut processor = MPDProcessor::new(buf_read);
-    processor.process_tags();
+    let mut processor = MPDProcessor::new(MPDReader);
+    processor.process();
 }

@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-import hasWebassembly from "../../../../../compat/has_webassembly";
-import log from "../../../../../log";
-import { assertUnreachable } from "../../../../../utils/assert";
-import globalScope from "../../../../../utils/global_scope";
-import noop from "../../../../../utils/noop";
-import type { IIrParserResponse, ILoadedXlinkData } from "../../common";
-import parseMpdIr from "../../common";
+import hasWebassembly from "../../../../../compat/has_webassembly.ts";
+import log from "../../../../../log.ts";
+import { assertUnreachable } from "../../../../../utils/assert.ts";
+import globalScope from "../../../../../utils/global_scope.ts";
+import noop from "../../../../../utils/noop.ts";
+import type { IIrParserResponse, ILoadedXlinkData } from "../../common/index.ts";
+import parseMpdIr from "../../common/index.ts";
 import type {
   IMPDIntermediateRepresentation,
   IPeriodIntermediateRepresentation,
-} from "../../node_parser_types";
+} from "../../node_parser_types.ts";
 import type {
   IDashParserResponse,
   ILoadedResource,
   IMPDParserArguments,
-} from "../../parsers_types";
-import { generateRootChildrenParser } from "./generators";
-import { generateXLinkChildrenParser } from "./generators/XLink";
-import ParsersStack from "./parsers_stack";
-import type { AttributeName, TagName } from "./types";
-import { CustomEventType } from "./types";
+} from "../../parsers_types.ts";
+import { generateRootChildrenParser } from "./generators/index.ts";
+import { generateXLinkChildrenParser } from "./generators/XLink.ts";
+import ParsersStack from "./parsers_stack.ts";
+import type { AttributeName, TagName } from "./types.ts";
+import { CustomEventType } from "./types.ts";
 
 const MAX_READ_SIZE = 15e3;
 
@@ -151,13 +151,11 @@ export default class DashWasmParser {
 
     const imports = {
       env: {
-        memoryBase: 0,
-        tableBase: 0,
-        memory: new WebAssembly.Memory({ initial: 10 }),
-        table: new WebAssembly.Table({ initial: 1, element: "anyfunc" }),
         onTagOpen,
         onCustomEvent,
         onAttribute,
+        onFloatAttribute,
+        onBooleanAttribute,
         readNext,
         onTagClose,
       },
@@ -255,6 +253,14 @@ export default class DashWasmParser {
       return parsersStack.attributeParser(attr, ptr, len);
     }
 
+    function onFloatAttribute(attr: AttributeName, value: number): void {
+      parsersStack.attributeParser(attr, 0, 0, value);
+    }
+
+    function onBooleanAttribute(attr: AttributeName, value: number): void {
+      parsersStack.attributeParser(attr, 0, 0, value);
+    }
+
     /**
      * Callback called on the various "custom events" triggered by the WASM.
      *
@@ -313,7 +319,7 @@ export default class DashWasmParser {
     mpd: ArrayBufferLike,
     args: IMPDParserArguments,
   ): IDashParserResponse<string> | IDashParserResponse<ArrayBuffer> {
-    const [mpdIR, warnings] = this._parseMpd(mpd);
+    const [mpdIR, warnings] = this.parseToIntermediateRepresentation(mpd);
     if (mpdIR === null) {
       throw new Error("DASH Parser: Unknown error while parsing the MPD");
     }
@@ -331,7 +337,8 @@ export default class DashWasmParser {
     return hasWebassembly && typeof globalScope.TextDecoder === "function";
   }
 
-  private _parseMpd(
+  /** @internal Build the parser-independent DASH intermediate representation from XML bytes. */
+  public parseToIntermediateRepresentation(
     mpd: ArrayBufferLike,
   ): [IMPDIntermediateRepresentation | null, Error[]] {
     if (this._instance === null) {

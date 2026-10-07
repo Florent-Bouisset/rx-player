@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import globalScope from "../../../utils/global_scope";
-import type { IMediaElement } from "../../browser_compatibility_types";
+import globalScope from "../../../utils/global_scope.ts";
+import type { IMediaElement } from "../../browser_compatibility_types.ts";
 
 type IWebKitMediaKeys = unknown;
 
@@ -25,8 +25,7 @@ interface IWebKitMediaKeysConstructor {
 }
 
 export default function getWebKitMediaKeysConstructor():
-  | undefined
-  | IWebKitMediaKeysConstructor {
+  undefined | IWebKitMediaKeysConstructor {
   const { WebKitMediaKeys } = globalScope as typeof globalThis & {
     WebKitMediaKeys?: IWebKitMediaKeysConstructor;
   };

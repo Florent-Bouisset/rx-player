@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import log from "../../../../../log";
-import isNullOrUndefined from "../../../../../utils/is_null_or_undefined";
-import { hexToBytes } from "../../../../../utils/string_parsing";
-import type { ITNode } from "../../../../../utils/xml-parser";
+import log from "../../../../../log.ts";
+import isNullOrUndefined from "../../../../../utils/is_null_or_undefined.ts";
+import { hexToBytes } from "../../../../../utils/string_parsing.ts";
+import type { ITNode } from "../../../../../utils/xml-parser.ts";
 import type {
   IContentProtectionAttributes,
   IContentProtectionChildren,
   IContentProtectionIntermediateRepresentation,
-} from "../../node_parser_types";
-import { parseBase64, textContent } from "./utils";
+} from "../../node_parser_types.ts";
+import { parseBase64, textContent } from "./utils.ts";
 
 /**
  * @param {Array.<Object | string>} contentProtectionChildren
@@ -33,7 +33,7 @@ function parseContentProtectionChildren(
   contentProtectionChildren: Array<ITNode | string>,
 ): [IContentProtectionChildren, Error[]] {
   const warnings: Error[] = [];
-  const cencPssh: Uint8Array[] = [];
+  const cencPssh: Array<{ value: Uint8Array }> = [];
   for (let i = 0; i < contentProtectionChildren.length; i++) {
     const currentElement = contentProtectionChildren[i];
     if (typeof currentElement !== "string" && currentElement.tagName === "cenc:pssh") {
@@ -45,12 +45,12 @@ function parseContentProtectionChildren(
           warnings.push(error);
         }
         if (toUint8Array !== null) {
-          cencPssh.push(toUint8Array);
+          cencPssh.push({ value: toUint8Array });
         }
       }
     }
   }
-  return [{ cencPssh }, warnings];
+  return [{ ["cenc:pssh"]: cencPssh }, warnings];
 }
 
 /**
@@ -72,7 +72,7 @@ function parseContentProtectionAttributes(root: ITNode): IContentProtectionAttri
         ret.value = attributeVal;
         break;
       case "cenc:default_KID":
-        ret.keyId = hexToBytes(attributeVal.replace(/-/g, ""));
+        ret["cenc:default_KID"] = hexToBytes(attributeVal.replace(/-/g, ""));
         break;
       case "ref":
         ret.ref = attributeVal;

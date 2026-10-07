@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import log from "../../log";
-import { getNextBoxOffsets } from "../../parsers/containers/isobmff";
-import { be4toi, concat } from "../../utils/byte_parsing";
-import type { IMediaKeySession } from "../browser_compatibility_types";
-import { PSSH_TO_INTEGER } from "./constants";
+import log from "../../log.ts";
+import { getNextBoxOffsets } from "../../parsers/containers/isobmff/index.ts";
+import { be4toi, concat } from "../../utils/byte_parsing.ts";
+import type { IMediaKeySession } from "../browser_compatibility_types.ts";
+import { PSSH_TO_INTEGER } from "./constants.ts";
 
 /**
  * Modify "initialization data" sent to a `generateKeyRequest` EME call to
@@ -136,7 +136,6 @@ export default function generateKeyRequest(
   initializationDataType: string | undefined,
   initializationData: Uint8Array<ArrayBuffer>,
 ): Promise<unknown> {
-  log.debug("DRM", "Calling generateRequest on the MediaKeySession");
   let patchedInit: Uint8Array<ArrayBuffer>;
   try {
     patchedInit = patchInitData(initializationData);
@@ -144,22 +143,35 @@ export default function generateKeyRequest(
     patchedInit = initializationData;
   }
   const initDataType = initializationDataType ?? "";
-  return session.generateRequest(initDataType, patchedInit).catch((error) => {
-    if (initDataType !== "" || !(error instanceof TypeError)) {
-      throw error;
-    }
+  log.debug("DRM", "Calling generateRequest on the MediaKeySession");
+  return session
+    .generateRequest(initDataType, patchedInit)
+    .catch((error) => {
+      if (initDataType !== "" || !(error instanceof TypeError)) {
+        throw error;
+      }
 
-    // On newer EME versions of the specification, the initialization data
-    // type given to generateRequest cannot be an empty string (it returns
-    // a rejected promise with a TypeError in that case).
-    // Retry with a default "cenc" value for initialization data type if
-    // we're in that condition.
-    log.warn(
-      "DRM",
-      "error while calling `generateRequest` with an empty " +
-        'initialization data type. Retrying with a default "cenc" value.',
-      error,
+      // On newer EME versions of the specification, the initialization data
+      // type given to generateRequest cannot be an empty string (it returns
+      // a rejected promise with a TypeError in that case).
+      // Retry with a default "cenc" value for initialization data type if
+      // we're in that condition.
+      log.warn(
+        "DRM",
+        "error while calling `generateRequest` with an empty " +
+          'initialization data type. Retrying with a default "cenc" value.',
+        error,
+      );
+      return session.generateRequest("cenc", patchedInit);
+    })
+    .then(
+      (result) => {
+        log.debug("DRM", "generateRequest succeeded");
+        return result;
+      },
+      (error: unknown) => {
+        log.debug("DRM", "generateRequest failed");
+        throw error;
+      },
     );
-    return session.generateRequest("cenc", patchedInit);
-  });
 }

@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-import isNullOrUndefined from "../../../../../utils/is_null_or_undefined";
-import objectAssign from "../../../../../utils/object_assign";
-import type { ITNode } from "../../../../../utils/xml-parser";
+import isNullOrUndefined from "../../../../../utils/is_null_or_undefined.ts";
+import type { ITNode } from "../../../../../utils/xml-parser.ts";
 import type {
   ISegmentTemplateIntermediateRepresentation,
   ITimelineParser,
-} from "../../node_parser_types";
-import parseSegmentBase from "./SegmentBase";
-import createSegmentTimelineParser from "./SegmentTimeline";
-import { parseBoolean, parseMPDFloat, ValueParser } from "./utils";
+} from "../../node_parser_types.ts";
+import parseSegmentBase from "./SegmentBase.ts";
+import createSegmentTimelineParser from "./SegmentTimeline.ts";
+import { parseBoolean, parseMPDFloat, ValueParser } from "./utils.ts";
 
 /**
  * Parse a SegmentTemplate element into a SegmentTemplate intermediate
@@ -47,12 +46,15 @@ export default function parseSegmentTemplate(
     }
   }
 
-  const ret: ISegmentTemplateIntermediateRepresentation = objectAssign({}, base, {
-    duration: base.duration,
-    timelineParser,
-  });
+  const ret: ISegmentTemplateIntermediateRepresentation = {
+    children: {
+      Initialization: base.children.Initialization,
+      timelineParser,
+    },
+    attributes: base.attributes,
+  };
 
-  const parseValue = ValueParser(ret, warnings);
+  const parseValue = ValueParser(ret.attributes, warnings);
 
   for (const attributeName of Object.keys(root.attributes)) {
     const attributeVal = root.attributes[attributeName];
@@ -61,44 +63,38 @@ export default function parseSegmentTemplate(
     }
     switch (attributeName) {
       case "initialization":
-        if (isNullOrUndefined(ret.initialization)) {
-          ret.initialization = { media: attributeVal };
-        }
+        ret.attributes.initialization = attributeVal;
         break;
 
       case "index":
-        ret.index = attributeVal;
+        ret.attributes.index = attributeVal;
         break;
 
       case "availabilityTimeOffset":
         parseValue(attributeVal, {
-          asKey: "availabilityTimeOffset",
           parser: parseMPDFloat,
-          dashName: "availabilityTimeOffset",
+          name: "availabilityTimeOffset",
         });
         break;
 
       case "availabilityTimeComplete":
         parseValue(attributeVal, {
-          asKey: "availabilityTimeComplete",
           parser: parseBoolean,
-          dashName: "availabilityTimeComplete",
+          name: "availabilityTimeComplete",
         });
         break;
 
       case "media":
-        ret.media = attributeVal;
+        ret.attributes.media = attributeVal;
         break;
 
       case "bitstreamSwitching":
         parseValue(attributeVal, {
-          asKey: "bitstreamSwitching",
           parser: parseBoolean,
-          dashName: "bitstreamSwitching",
+          name: "bitstreamSwitching",
         });
         break;
     }
   }
-
   return [ret, warnings];
 }
