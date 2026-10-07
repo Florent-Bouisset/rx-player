@@ -68,49 +68,56 @@ describe("decrypt - global tests - server certificate", () => {
     mocks.generateKeyRequest.mockReset();
   });
 
-  it("should set the serverCertificate only after the MediaKeys is attached", () => {
+  it("should await the serverCertificate before attaching the MediaKeys", async () => {
     const videoElt = document.createElement("video");
     mockCompat(mocks);
     mocks.setMediaKeys.mockImplementation(() => {
       expect(mockCreateSession).not.toHaveBeenCalled();
-      expect(mockSetServerCertificate).not.toHaveBeenCalled();
+      expect(mockSetServerCertificate).toHaveBeenCalledTimes(1);
       return Promise.resolve();
     });
     const mockCreateSession = vi.spyOn(MediaKeysImpl.prototype, "createSession");
+    let resolveServerCertificate: () => void;
+    const serverCertificateIsBeingSet = new Promise<void>((resolve) => {
+      resolveServerCertificate = resolve;
+    });
+    let finishSettingServerCertificate: (value: true) => void;
     const mockSetServerCertificate = vi
       .spyOn(MediaKeysImpl.prototype, "setServerCertificate")
       .mockImplementation((_serverCertificate: BufferSource): Promise<true> => {
-        expect(mocks.setMediaKeys).toHaveBeenCalledTimes(1);
+        resolveServerCertificate();
         expect(mockCreateSession).not.toHaveBeenCalled();
-        return Promise.resolve(true);
+        return new Promise((resolve) => {
+          finishSettingServerCertificate = resolve;
+        });
       });
 
     const eme = getEmeApiImplementation("auto");
     assert(eme !== null, "Expected to have an EME implementation");
     const contentDecryptor = new ContentDecryptor(eme, videoElt, ksConfigCert);
-
-    return new Promise<void>((res) => {
-      contentDecryptor.addEventListener("stateChange", (state) => {
-        if (state === ContentDecryptorState.WaitingForAttachment) {
-          contentDecryptor.removeEventListener("stateChange");
-          setTimeout(() => {
-            expect(mocks.setMediaKeys).not.toHaveBeenCalled();
-            expect(mockCreateSession).not.toHaveBeenCalled();
-            expect(mockSetServerCertificate).not.toHaveBeenCalled();
-            contentDecryptor.attach();
-          }, 5);
-          setTimeout(() => {
-            contentDecryptor.dispose(undefined);
-            expect(mocks.setMediaKeys).toHaveBeenCalledTimes(1);
-            expect(mockSetServerCertificate).toHaveBeenCalledTimes(1);
-            expect(mockCreateSession).not.toHaveBeenCalled();
-            mockSetServerCertificate.mockRestore();
-            mockCreateSession.mockRestore();
-            res();
-          }, 10);
-        }
-      });
+    let readyForContent: () => void;
+    const contentIsReady = new Promise<void>((resolve) => {
+      readyForContent = resolve;
     });
+    contentDecryptor.addEventListener("stateChange", (state) => {
+      if (state === ContentDecryptorState.WaitingForAttachment) {
+        contentDecryptor.attach();
+      } else if (state === ContentDecryptorState.ReadyForContent) {
+        readyForContent();
+      }
+    });
+
+    await serverCertificateIsBeingSet;
+    expect(mocks.setMediaKeys).not.toHaveBeenCalled();
+    finishSettingServerCertificate!(true);
+    await contentIsReady;
+
+    contentDecryptor.dispose(undefined);
+    expect(mocks.setMediaKeys).toHaveBeenCalledTimes(1);
+    expect(mockSetServerCertificate).toHaveBeenCalledTimes(1);
+    expect(mockCreateSession).not.toHaveBeenCalled();
+    mockSetServerCertificate.mockRestore();
+    mockCreateSession.mockRestore();
   });
 
   it("should not call serverCertificate multiple times on init data", () => {

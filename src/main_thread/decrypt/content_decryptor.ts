@@ -291,51 +291,51 @@ export default class ContentDecryptor extends EventEmitter<IContentDecryptorEven
       keySystemOptions: options,
     };
 
-    log.debug("DRM", "Attaching current MediaKeys");
-    MediaKeysAttacher.attach(mediaElement, stateToAttach)
-      .then(async () => {
-        if (this._isStopped()) {
-          // We might be stopped since then
-          return;
-        }
-        this._stateData.isMediaKeysAttached = MediaKeyAttachmentStatus.Attached;
-
-        const { serverCertificate } = options;
-        if (!isNullOrUndefined(serverCertificate)) {
-          const resSsc = await setServerCertificate(
-            mediaKeys,
-            serverCertificate,
-            mediaKeySystemAccess,
+    const { serverCertificate } = options;
+    (async () => {
+      if (!isNullOrUndefined(serverCertificate)) {
+        const resSsc = await setServerCertificate(
+          mediaKeys,
+          serverCertificate,
+          mediaKeySystemAccess,
+        );
+        if (resSsc.type === "error") {
+          this.trigger("warning", resSsc.value);
+        } else if (resSsc.type === "not-supported") {
+          log.warn(
+            "DRM",
+            "Server certificate is not supported by the current MediaKeys.",
           );
-          if (resSsc.type === "error") {
-            this.trigger("warning", resSsc.value);
-          } else if (resSsc.type === "not-supported") {
-            log.warn(
-              "DRM",
-              "Server certificate is not supported by the current MediaKeys.",
-            );
-          }
         }
+      }
 
-        if (this._isStopped()) {
-          // We might be stopped since then
-          return;
-        }
+      if (this._isStopped()) {
+        // We might be stopped since then
+        return;
+      }
 
-        const prevState = this._stateData.state;
-        this._stateData = {
-          state: ContentDecryptorState.ReadyForContent,
-          isMediaKeysAttached: MediaKeyAttachmentStatus.Attached,
-          isInitDataQueueLocked: false,
-          data: { mediaKeysData: mediaKeysInfo },
-        };
-        if (prevState !== ContentDecryptorState.ReadyForContent) {
-          this.trigger("stateChange", ContentDecryptorState.ReadyForContent);
-        }
-        if (!this._isStopped()) {
-          this._processCurrentInitDataQueue();
-        }
-      })
+      log.debug("DRM", "Attaching current MediaKeys");
+      await MediaKeysAttacher.attach(mediaElement, stateToAttach);
+      if (this._isStopped()) {
+        // We might be stopped since then
+        return;
+      }
+      this._stateData.isMediaKeysAttached = MediaKeyAttachmentStatus.Attached;
+
+      const prevState = this._stateData.state;
+      this._stateData = {
+        state: ContentDecryptorState.ReadyForContent,
+        isMediaKeysAttached: MediaKeyAttachmentStatus.Attached,
+        isInitDataQueueLocked: false,
+        data: { mediaKeysData: mediaKeysInfo },
+      };
+      if (prevState !== ContentDecryptorState.ReadyForContent) {
+        this.trigger("stateChange", ContentDecryptorState.ReadyForContent);
+      }
+      if (!this._isStopped()) {
+        this._processCurrentInitDataQueue();
+      }
+    })()
 
       .catch((err) => {
         this._onFatalError(err);
